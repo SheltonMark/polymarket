@@ -2,10 +2,10 @@
 const ADMIN_TOKEN_KEY = "lockpro_admin_token";
 
 const SECTION_META = {
-  overview: { title: "数据概览", desc: "查看平台总览与待处理事项。" },
+  overview: { title: "数据概览", desc: "查看用户、资金、订单与内容的核心数据。" },
   "home-manage": { title: "首页管理", desc: "配置首页标题与文章内容。" },
   "user-manage": { title: "用户管理", desc: "查看用户信息并执行余额加减与账号状态管理。" },
-  "order-manage": { title: "订单管理", desc: "配置订单模板、上下架状态与归档。" },
+  "order-manage": { title: "订单管理", desc: "配置订单模板状态与归档。" },
   "deposit-manage": { title: "充值管理", desc: "审核用户充值申请，支持通过或驳回。" },
   "withdraw-manage": { title: "提现管理", desc: "审核用户提现申请，支持通过或驳回。" },
   "agreement-manage": { title: "协议管理", desc: "编辑注册时展示给用户的协议内容。" },
@@ -135,7 +135,7 @@ function renderOverview() {
   pendingRoot.innerHTML = [
     `待审核充值：${pendingDepositCount()} 笔`,
     `待审核提现：${pendingWithdrawCount()} 笔`,
-    `上架订单模板：${onShelfCount} 个`,
+    `在架订单模板：${onShelfCount} 个`,
   ]
     .map((item) => `<li>${item}</li>`)
     .join("");

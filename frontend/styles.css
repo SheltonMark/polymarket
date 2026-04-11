@@ -537,6 +537,13 @@ main {
   gap: 12px;
 }
 
+.metric-note {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-soft);
+}
+
 .metric {
   min-height: 104px;
 }
