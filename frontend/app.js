@@ -488,6 +488,7 @@ function getSeriesByRange(range) {
 
 function updateTopAuthButton() {
   const authBtn = q("#authBtn");
+  const topLogoutBtn = q("#topLogoutBtn");
   if (!authBtn) return;
 
   if (state.user.loggedIn) {
@@ -495,6 +496,7 @@ function updateTopAuthButton() {
     authBtn.textContent = "";
     authBtn.setAttribute("aria-label", "进入个人中心");
     authBtn.setAttribute("title", "个人中心");
+    if (topLogoutBtn) topLogoutBtn.style.display = "inline-flex";
     return;
   }
 
@@ -502,6 +504,7 @@ function updateTopAuthButton() {
   authBtn.textContent = "注册 / 登录";
   authBtn.setAttribute("aria-label", "注册或登录");
   authBtn.setAttribute("title", "注册 / 登录");
+  if (topLogoutBtn) topLogoutBtn.style.display = "none";
 }
 
 function updateWalletView() {
@@ -912,9 +915,40 @@ function setAuthMode(mode) {
   refreshAllSegmentIndicators();
 }
 
+function logoutUser() {
+  state.token = "";
+  localStorage.removeItem(USER_TOKEN_KEY);
+
+  state.user.id = "";
+  state.user.username = "游客";
+  state.user.status = "未登录";
+  state.user.loggedIn = false;
+
+  state.wallet.available = 0;
+  state.wallet.principalAvailable = 0;
+  state.wallet.frozen = 0;
+  state.wallet.profitAvailable = 0;
+  state.wallet.totalProfit = 0;
+
+  state.orderHistory = [];
+  state.depositRecords = [];
+  state.withdrawRecords = [];
+
+  buildChartSeriesFromOrders();
+  updateWalletView();
+  drawPnlChart();
+  renderOrderHistory();
+  renderRecords();
+
+  switchSection("home");
+  refreshAllSegmentIndicators();
+  showToast("已退出登录");
+}
 function initAuth() {
   q("#agreementContent").textContent = state.agreementText || defaultSiteConfig.agreementText;
   initAuthChannelSelect();
+
+  q("#topLogoutBtn")?.addEventListener("click", logoutUser);
 
   q("#authBtn").addEventListener("click", () => {
     if (state.user.loggedIn) {
@@ -1186,3 +1220,4 @@ async function init() {
 }
 
 init();
+
