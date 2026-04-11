@@ -74,6 +74,9 @@
   authMode: "login",
   siteConfig: null,
   agreementText: "",
+  homeActiveTopic: "all",
+  selectedHomeArticleId: null,
+  homeArticles: [],
 };
 
 const defaultSiteConfig = {
@@ -95,48 +98,90 @@ const defaultSiteConfig = {
 4. 用户应妥善保管账号与密码，因个人原因造成的损失由用户承担。
 5. 本协议最终解释与更新说明以平台最新发布版本为准。`,
   home: {
-    chip: "平台说明",
-    title: "稳定、清晰、可追踪的数字资产操作台",
-    description:
-      "提供账户总览、订单操作、资金申请与记录查询。页面采用卡片式布局，交互简洁明确，方便用户快速定位关键操作。",
-    heroActions: [
+    tag: "内容专栏",
+    title: "LockPro 深度内容中心",
+    description: "围绕量化策略、系统逻辑和行业动态持续更新，支持按专题筛选并查看完整文章详情。",
+    quickActions: [
       { label: "进入交易中心", target: "trade", variant: "primary" },
       { label: "打开个人中心", target: "profile", variant: "ghost" },
     ],
-    heroStats: [
-      { label: "今日访问", value: "12,860" },
-      { label: "在线用户", value: "1,284" },
-      { label: "已完成订单", value: "9,462" },
+    topics: [
+      { id: "hedge", label: "量化对冲套利" },
+      { id: "system", label: "系统说明" },
+      { id: "news", label: "区块链时事新闻" },
     ],
-    highlights: [
-      { title: "资产更新", desc: "账户资产卡片随交易状态刷新，关键数值优先展示。" },
-      { title: "订单执行", desc: "订单支持快速下单、跟踪与状态回看。" },
-      { title: "资金处理", desc: "充值与提现申请统一集中管理，记录可追溯。" },
-      { title: "权限入口", desc: "注册与登录合并在同一弹窗，流程更集中。" },
-    ],
-    carousel: [
-      { title: "资产总览", description: "顶部指标卡实时展示账户金额变化，便于快速掌握当前资产状态。" },
-      { title: "订单执行", description: "订单区支持快速下单和记录跟踪，确认信息后即可完成提交。" },
-      { title: "账户管理", description: "个人中心集中处理充值、提现、协议查看和账户设置类操作。" },
-    ],
-    quickLinks: [
-      { label: "收益曲线", target: "trade" },
-      { label: "订单簿", target: "trade" },
-      { label: "充值 / 提现", target: "profile" },
-      { label: "账户记录", target: "profile" },
-    ],
-    notices: [
-      "注册时需阅读并勾选用户协议后方可完成注册。",
-      "充值与提现申请均需先提交信息，等待人工处理结果。",
-      "订单、资金与账户记录可在个人中心统一查询。",
-      "请妥善保管账号密码并定期更新登录凭据。",
+    articles: [
+      {
+        id: "art_001",
+        topicId: "hedge",
+        title: "量化对冲套利的核心框架与执行边界",
+        summary: "拆解对冲套利的信号生成、仓位控制和执行节奏，明确策略在不同波动阶段的适用条件。",
+        content:
+          "量化对冲套利的目标不是追求单笔极值收益，而是通过高纪律、可重复的执行提升总体稳定性。\n\n在执行层面，需要优先控制风险敞口和仓位结构，其次才是进场时机优化。通过持续校准参数，可以减少市场噪音对结果的冲击。\n\n系统化的复盘机制同样关键，它决定了策略能否在环境变化中保持适应能力。",
+        author: "LockPro Research",
+        publishedAt: "2026-04-10",
+        hot: true,
+      },
+      {
+        id: "art_002",
+        topicId: "system",
+        title: "系统说明：从信号到结果的闭环设计",
+        summary: "说明指标、阈值、执行和复盘之间的关系，帮助用户快速理解策略为什么有效。",
+        content:
+          "策略逻辑的关键在于闭环：信号识别、条件确认、执行动作和结果反馈必须形成一致链路。\n\n如果缺少反馈层，模型就无法对偏差进行修正，长期表现会逐步退化。\n\n因此我们在设计时强调可解释、可验证、可追踪，确保每个步骤都有明确输入输出。",
+        author: "LockPro Research",
+        publishedAt: "2026-04-09",
+        hot: false,
+      },
+      {
+        id: "art_003",
+        topicId: "hedge",
+        title: "策略解读：如何根据资金规模安排下单节奏",
+        summary: "结合资金体量和风险偏好，给出更稳健的下单节奏建议，避免集中暴露。",
+        content:
+          "策略执行中常见问题是仓位过度集中。更稳妥的方式是分段下单并设置明确的复核节点。\n\n对于不同资金规模，建议采用不同的分配比例和执行间隔，以降低阶段性波动带来的影响。\n\n下单节奏不是固定模板，而是需要随着市场环境与账户状态动态调整。",
+        author: "LockPro Strategy Team",
+        publishedAt: "2026-04-08",
+        hot: false,
+      },
+      {
+        id: "art_004",
+        topicId: "system",
+        title: "系统优势解读：为什么强调流程一致性",
+        summary: "通过统一流程与可视化记录，降低人工操作偏差，提升整体执行效率。",
+        content:
+          "流程一致性能显著降低执行误差。统一的操作路径有助于团队协作，也能让用户更快定位关键信息。\n\n在系统层面，清晰的状态反馈和记录链路，使得每一步操作都能追溯并复查。\n\n这类优势不会在单次操作中完全体现，但会在长期使用中持续放大。",
+        author: "LockPro Product",
+        publishedAt: "2026-04-07",
+        hot: false,
+      },
+      {
+        id: "art_005",
+        topicId: "system",
+        title: "系统说明：账户、订单与记录模块如何协同",
+        summary: "梳理首页、交易中心、个人中心的协同关系，明确各模块的使用路径。",
+        content:
+          "账户模块负责资金与状态展示，交易模块负责下单与订单跟踪，记录模块负责历史查询与复核。\n\n三者的协同设计目标是降低切换成本、减少重复输入、提高信息一致性。\n\n当模块边界清晰后，后续联调和后台配置也会更直接。",
+        author: "LockPro Product",
+        publishedAt: "2026-04-06",
+        hot: false,
+      },
+      {
+        id: "art_006",
+        topicId: "news",
+        title: "区块链时事速览：近期市场情绪与风险关注点",
+        summary: "从资金流向和波动特征出发，提炼近期值得关注的行业动态与风险提示。",
+        content:
+          "市场情绪通常会在短周期内快速切换，热点题材往往伴随更高波动。\n\n对普通用户而言，保持节奏稳定比追逐短时情绪更重要。\n\n建议在观察行业动态时，始终结合自身仓位结构与风险承受能力。",
+        author: "LockPro News Desk",
+        publishedAt: "2026-04-05",
+        hot: true,
+      },
     ],
   },
 };
 
 let toastTimer = null;
-let carouselTimer = null;
-let carouselIndex = 0;
 
 function q(selector) {
   return document.querySelector(selector);
@@ -176,6 +221,245 @@ function safeArray(value, fallback = []) {
   return Array.isArray(value) && value.length ? value : fallback;
 }
 
+function resolveHomeTopics(home) {
+  const topics = safeArray(home.topics, defaultSiteConfig.home.topics);
+  return topics
+    .map((item) => ({
+      id: safeString(item.id),
+      label: safeString(item.label, "未命名专题"),
+    }))
+    .filter((item) => item.id);
+}
+
+function resolveHomeArticles(home, topics) {
+  const topicLabelMap = Object.fromEntries(topics.map((topic) => [topic.id, topic.label]));
+  const source = safeArray(home.articles, defaultSiteConfig.home.articles);
+
+  return source
+    .map((item, index) => {
+      const topicId = safeString(item.topicId, topics[0]?.id || "");
+      return {
+        id: safeString(item.id, `article_${index + 1}`),
+        topicId,
+        topicLabel: topicLabelMap[topicId] || "未分类",
+        title: safeString(item.title, "未命名文章"),
+        summary: safeString(item.summary, ""),
+        content: safeString(item.content, ""),
+        author: safeString(item.author, "LockPro"),
+        publishedAt: safeString(item.publishedAt, ""),
+        hot: Boolean(item.hot),
+      };
+    })
+    .filter((item) => item.topicId);
+}
+
+function formatDateText(text) {
+  if (!text) return "--";
+  const date = new Date(text);
+  if (Number.isNaN(date.getTime())) return text;
+  return date.toLocaleDateString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" });
+}
+
+function renderHomeTopics(topics) {
+  const root = q("#homeTopicTabs");
+  if (!root) return;
+
+  root.querySelectorAll(".home-topic-btn").forEach((button) => button.remove());
+
+  const list = [{ id: "all", label: "全部" }, ...topics];
+  const exists = list.some((item) => item.id === state.homeActiveTopic);
+  if (!exists) {
+    state.homeActiveTopic = "all";
+  }
+
+  list.forEach((item) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = `home-topic-btn${item.id === state.homeActiveTopic ? " active" : ""}`;
+    btn.dataset.topicId = item.id;
+    btn.textContent = item.label;
+    btn.addEventListener("click", () => {
+      state.homeActiveTopic = item.id;
+      renderHomeArticles(state.homeArticles);
+      renderHomeTopics(topics);
+      refreshAllSegmentIndicators();
+    });
+    root.appendChild(btn);
+  });
+
+  const activeTopic = list.find((item) => item.id === state.homeActiveTopic) || list[0];
+  const topicMeta = q("#homeTopicMeta");
+  if (topicMeta) {
+    topicMeta.textContent = activeTopic.id === "all" ? "全部文章" : activeTopic.label;
+  }
+}
+
+function openHomeArticleModal(articleId) {
+  const article = state.homeArticles.find((item) => item.id === articleId);
+  if (!article) return;
+
+  state.selectedHomeArticleId = articleId;
+
+  const title = q("#homeArticleModalTitle");
+  const meta = q("#homeArticleModalMeta");
+  const content = q("#homeArticleModalContent");
+  if (!title || !meta || !content) return;
+
+  title.textContent = article.title;
+  meta.innerHTML = "";
+
+  const metaItems = [article.topicLabel, article.author, formatDateText(article.publishedAt)];
+  metaItems.forEach((value) => {
+    const chip = document.createElement("span");
+    chip.textContent = value;
+    meta.appendChild(chip);
+  });
+
+  if (article.hot) {
+    const hot = document.createElement("span");
+    hot.className = "article-hot";
+    hot.textContent = "热门";
+    meta.appendChild(hot);
+  }
+
+  content.innerHTML = "";
+  const blocks = article.content
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const paragraphs = blocks.length ? blocks : [article.summary || "暂无正文内容"];
+  paragraphs.forEach((text) => {
+    const p = document.createElement("p");
+    p.textContent = text;
+    content.appendChild(p);
+  });
+
+  q("#homeArticleModalBackdrop")?.classList.add("open");
+}
+
+function closeHomeArticleModal() {
+  q("#homeArticleModalBackdrop")?.classList.remove("open");
+}
+
+function renderHomeArticles(articles) {
+  const root = q("#homeArticleList");
+  if (!root) return;
+
+  const filtered = state.homeActiveTopic === "all"
+    ? articles
+    : articles.filter((item) => item.topicId === state.homeActiveTopic);
+
+  const hint = q("#homeArticleHint");
+  if (hint) {
+    hint.textContent = `共 ${filtered.length} 篇`;
+  }
+
+  root.innerHTML = "";
+
+  if (!filtered.length) {
+    const empty = document.createElement("div");
+    empty.className = "home-article-empty";
+    empty.textContent = "当前专题暂时没有文章。";
+    root.appendChild(empty);
+    return;
+  }
+
+  filtered.forEach((article) => {
+    const item = document.createElement("button");
+    item.type = "button";
+    item.className = "home-article-item";
+    item.addEventListener("click", () => openHomeArticleModal(article.id));
+
+    const head = document.createElement("div");
+    head.className = "article-item-head";
+
+    const title = document.createElement("h4");
+    title.className = "article-item-title";
+    title.textContent = article.title;
+
+    const topic = document.createElement("span");
+    topic.className = "article-topic";
+    topic.textContent = article.topicLabel;
+
+    head.appendChild(title);
+    head.appendChild(topic);
+
+    const summary = document.createElement("p");
+    summary.className = "article-item-summary";
+    summary.textContent = article.summary;
+
+    const meta = document.createElement("div");
+    meta.className = "article-item-meta";
+
+    const date = document.createElement("span");
+    date.textContent = formatDateText(article.publishedAt);
+
+    const author = document.createElement("span");
+    author.textContent = article.author;
+
+    meta.appendChild(date);
+    meta.appendChild(author);
+
+    if (article.hot) {
+      const hot = document.createElement("span");
+      hot.className = "article-hot";
+      hot.textContent = "热门";
+      meta.appendChild(hot);
+    }
+
+    item.appendChild(head);
+    item.appendChild(summary);
+    item.appendChild(meta);
+    root.appendChild(item);
+  });
+}
+
+function renderHomeContent(home) {
+  const introTag = q("#homeIntroTag");
+  if (introTag) {
+    introTag.textContent = safeString(home.tag, defaultSiteConfig.home.tag);
+  }
+
+  const introTitle = q("#homeIntroTitle");
+  if (introTitle) {
+    introTitle.textContent = safeString(home.title, defaultSiteConfig.home.title);
+  }
+
+  const introDesc = q("#homeIntroDesc");
+  if (introDesc) {
+    introDesc.textContent = safeString(home.description, defaultSiteConfig.home.description);
+  }
+
+  const actionRoot = q("#homeQuickActions");
+  if (actionRoot) {
+    actionRoot.innerHTML = "";
+    safeArray(home.quickActions, defaultSiteConfig.home.quickActions).forEach((item) => {
+      const btn = document.createElement("button");
+      btn.className = `btn ${item.variant === "ghost" ? "ghost" : "primary"}`;
+      btn.dataset.jump = safeString(item.target, "trade");
+      btn.textContent = safeString(item.label, "进入");
+      actionRoot.appendChild(btn);
+    });
+  }
+
+  const topics = resolveHomeTopics(home);
+  const articles = resolveHomeArticles(home, topics);
+  state.homeArticles = articles;
+
+  renderHomeTopics(topics);
+  renderHomeArticles(articles);
+}
+
+function initHomeArticleModal() {
+  q("#closeHomeArticleModal")?.addEventListener("click", closeHomeArticleModal);
+  q("#homeArticleModalBackdrop")?.addEventListener("click", (event) => {
+    if (event.target.id === "homeArticleModalBackdrop") {
+      closeHomeArticleModal();
+    }
+  });
+}
+
 function applySiteConfig(config) {
   const finalConfig = config || defaultSiteConfig;
   state.siteConfig = finalConfig;
@@ -187,74 +471,7 @@ function applySiteConfig(config) {
   }
 
   const home = finalConfig.home || defaultSiteConfig.home;
-  q("#homeChip").textContent = safeString(home.chip, defaultSiteConfig.home.chip);
-  q("#homeHeroTitle").textContent = safeString(home.title, defaultSiteConfig.home.title);
-  q("#homeHeroDesc").textContent = safeString(home.description, defaultSiteConfig.home.description);
-
-  const actionRoot = q("#homeHeroActions");
-  actionRoot.innerHTML = "";
-  safeArray(home.heroActions, defaultSiteConfig.home.heroActions).forEach((item) => {
-    const btn = document.createElement("button");
-    btn.className = `btn ${item.variant === "ghost" ? "ghost" : "primary"}`;
-    btn.dataset.jump = safeString(item.target, "trade");
-    btn.textContent = safeString(item.label, "杩涘叆");
-    actionRoot.appendChild(btn);
-  });
-
-  const statsRoot = q("#homeHeroStats");
-  statsRoot.innerHTML = "";
-  safeArray(home.heroStats, defaultSiteConfig.home.heroStats).forEach((item) => {
-    const card = document.createElement("article");
-    card.className = "hero-stat";
-    card.innerHTML = `
-      <span>${safeString(item.label, "--")}</span>
-      <strong>${safeString(item.value, "--")}</strong>
-    `;
-    statsRoot.appendChild(card);
-  });
-
-  const highlightsRoot = q("#homeHighlights");
-  highlightsRoot.innerHTML = "";
-  safeArray(home.highlights, defaultSiteConfig.home.highlights).forEach((item) => {
-    const li = document.createElement("li");
-    li.innerHTML = `
-      <div class="line-1">
-        <span>${safeString(item.title, "--")}</span>
-      </div>
-      <div class="line-2">${safeString(item.desc, "")}</div>
-    `;
-    highlightsRoot.appendChild(li);
-  });
-
-  const carouselRoot = q("#homeCarouselItems");
-  carouselRoot.innerHTML = "";
-  safeArray(home.carousel, defaultSiteConfig.home.carousel).forEach((item, index) => {
-    const block = document.createElement("div");
-    block.className = `carousel-item${index === 0 ? " active" : ""}`;
-    block.innerHTML = `
-      <h3>${safeString(item.title, "--")}</h3>
-      <p>${safeString(item.description, "")}</p>
-    `;
-    carouselRoot.appendChild(block);
-  });
-
-  const quickRoot = q("#homeQuickLinks");
-  quickRoot.innerHTML = "";
-  safeArray(home.quickLinks, defaultSiteConfig.home.quickLinks).forEach((item) => {
-    const btn = document.createElement("button");
-    btn.className = "quick-link";
-    btn.dataset.jump = safeString(item.target, "trade");
-    btn.textContent = safeString(item.label, "杩涘叆");
-    quickRoot.appendChild(btn);
-  });
-
-  const noticeRoot = q("#homeNotices");
-  noticeRoot.innerHTML = "";
-  safeArray(home.notices, defaultSiteConfig.home.notices).forEach((text) => {
-    const li = document.createElement("li");
-    li.textContent = safeString(text, "--");
-    noticeRoot.appendChild(li);
-  });
+  renderHomeContent(home);
 
   const paymentConfig = finalConfig.payment || defaultSiteConfig.payment;
   const digitalAddress = safeString(paymentConfig.digitalAddress, defaultSiteConfig.payment.digitalAddress);
@@ -263,10 +480,10 @@ function applySiteConfig(config) {
   const bank = paymentConfig.bank || defaultSiteConfig.payment.bank;
   const bankInfoRoot = q("#platformBankInfo");
   bankInfoRoot.innerHTML = `
-    <div class="bank-line"><span>寮€鎴疯</span><span>${safeString(bank.bankName, defaultSiteConfig.payment.bank.bankName)}</span></div>
-    <div class="bank-line"><span>鎴峰悕</span><span>${safeString(bank.accountName, defaultSiteConfig.payment.bank.accountName)}</span></div>
-    <div class="bank-line"><span>鍗″彿</span><span>${safeString(bank.accountNo, defaultSiteConfig.payment.bank.accountNo)}</span></div>
-    <div class="bank-line"><span>鏀</span><span>${safeString(bank.branch, defaultSiteConfig.payment.bank.branch)}</span></div>
+    <div class="bank-line"><span>开户行</span><span>${safeString(bank.bankName, defaultSiteConfig.payment.bank.bankName)}</span></div>
+    <div class="bank-line"><span>户名</span><span>${safeString(bank.accountName, defaultSiteConfig.payment.bank.accountName)}</span></div>
+    <div class="bank-line"><span>卡号</span><span>${safeString(bank.accountNo, defaultSiteConfig.payment.bank.accountNo)}</span></div>
+    <div class="bank-line"><span>支行</span><span>${safeString(bank.branch, defaultSiteConfig.payment.bank.branch)}</span></div>
   `;
 
   const agreementNode = q("#agreementContent");
@@ -487,6 +704,7 @@ function updateSegmentIndicator(container, selector, indicator) {
 function refreshAllSegmentIndicators() {
   updateSegmentIndicator(q("#mainNav"), ".nav-btn.active", q("#segmentIndicator"));
   updateSegmentIndicator(q("#timeFilter"), ".time-btn.active", q("#timeIndicator"));
+  updateSegmentIndicator(q("#homeTopicTabs"), ".home-topic-btn.active", q("#homeTopicIndicator"));
   updateSegmentIndicator(q("#authTabs"), ".auth-tab.active", q("#authIndicator"));
 }
 
@@ -511,37 +729,6 @@ function initNav() {
 function switchSection(id) {
   qq(".section").forEach((section) => section.classList.toggle("active", section.id === id));
   qq(".nav-btn[data-section]").forEach((btn) => btn.classList.toggle("active", btn.dataset.section === id));
-}
-
-function initCarousel() {
-  if (carouselTimer) {
-    clearInterval(carouselTimer);
-    carouselTimer = null;
-  }
-  const items = qq(".carousel-item");
-  const dotsRoot = q("#carouselDots");
-  if (!items.length || !dotsRoot) return;
-
-  carouselIndex = 0;
-  dotsRoot.innerHTML = "";
-  items.forEach((_, index) => {
-    const dot = document.createElement("button");
-    dot.className = `carousel-dot${index === 0 ? " active" : ""}`;
-    dot.addEventListener("click", () => showCarouselSlide(index));
-    dotsRoot.appendChild(dot);
-  });
-
-  items.forEach((item, i) => item.classList.toggle("active", i === 0));
-  carouselTimer = setInterval(() => {
-    carouselIndex = (carouselIndex + 1) % items.length;
-    showCarouselSlide(carouselIndex);
-  }, 3600);
-}
-
-function showCarouselSlide(index) {
-  qq(".carousel-item").forEach((item, i) => item.classList.toggle("active", i === index));
-  qq(".carousel-dot").forEach((dot, i) => dot.classList.toggle("active", i === index));
-  carouselIndex = index;
 }
 
 function createOrderCode() {
@@ -789,6 +976,17 @@ function copyAddress() {
 
 function initPaymentForms() {
   q("#copyAddressBtn").addEventListener("click", copyAddress);
+  const depositScreenshotInput = q("#depositScreenshot");
+  const depositScreenshotHint = q("#depositScreenshotHint");
+
+  if (depositScreenshotInput && depositScreenshotHint) {
+    depositScreenshotInput.addEventListener("change", () => {
+      const file = depositScreenshotInput.files?.[0];
+      depositScreenshotHint.textContent = file
+        ? `已选择截图：${file.name}`
+        : "请上传清晰的转账截图，便于后台审核。";
+    });
+  }
 
   qq(".switch-btn[data-deposit-method]").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -815,21 +1013,24 @@ function initPaymentForms() {
   q("#depositForm").addEventListener("submit", (event) => {
     event.preventDefault();
     const amount = Number(q("#depositAmount").value || 0);
-    const txid = q("#depositTxid").value.trim();
-    if (!amount || !txid) {
+    const screenshotFile = q("#depositScreenshot").files?.[0];
+    if (!amount || !screenshotFile) {
       showToast("请填写完整的充值信息", true);
       return;
     }
 
     state.depositRecords.unshift({
       amount,
-      txid,
+      screenshotName: screenshotFile.name,
       method: state.depositMethod,
       status: "待处理",
       time: Date.now(),
     });
 
     event.target.reset();
+    if (depositScreenshotHint) {
+      depositScreenshotHint.textContent = "请上传清晰的转账截图，便于后台审核。";
+    }
     renderRecords();
     showToast("充值申请已提交");
   });
@@ -891,7 +1092,7 @@ function renderRecords() {
   if (state.recordType === "deposit") {
     records = state.depositRecords.map((record) => ({
       title: `充值申请 ${money(record.amount)}`,
-      desc: `方式：${record.method === "bank" ? "银行卡" : "数字地址"} ｜ 凭证：${record.txid} ｜ 状态：${record.status}`,
+      desc: `方式：${record.method === "bank" ? "银行卡" : "数字地址"} ｜ 截图：${record.screenshotName || "未上传"} ｜ 状态：${record.status}`,
       time: record.time,
     }));
   } else if (state.recordType === "withdraw") {
@@ -1100,6 +1301,7 @@ async function init() {
   initPaymentForms();
   initRecordSwitch();
   initAuth();
+  initHomeArticleModal();
   initSettleControls();
 
   renderOrderProducts();
@@ -1108,7 +1310,6 @@ async function init() {
   updateWalletView();
 
   await loadSiteConfig();
-  initCarousel();
 
   drawPnlChart();
   refreshAllSegmentIndicators();

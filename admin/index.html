@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LockPro Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="bg-layer bg-1"></div>
+  <div class="bg-layer bg-2"></div>
+  <div class="bg-layer bg-3"></div>
+
+  <section class="login-shell" id="loginView">
+    <article class="card glass login-card">
+      <div class="login-head">
+        <h1>LockPro 管理后台</h1>
+        <p>请先使用管理员账号登录</p>
+      </div>
+      <form id="loginForm">
+        <div class="field">
+          <label for="loginUsername">管理员账号</label>
+          <input id="loginUsername" type="text" placeholder="admin" required />
+        </div>
+        <div class="field">
+          <label for="loginPassword">登录密码</label>
+          <input id="loginPassword" type="password" placeholder="请输入密码" required />
+        </div>
+        <button class="btn primary full" type="submit">登录后台</button>
+      </form>
+    </article>
+  </section>
+
+  <div class="app-shell hidden" id="adminApp">
+    <header class="topbar glass">
+      <div class="brand">
+        <div class="brand-dot"></div>
+        <div>
+          <h1>LockPro Admin</h1>
+          <p>配置中心与审核台</p>
+        </div>
+      </div>
+      <nav class="main-nav liquid-segment" id="mainNav">
+        <span class="segment-indicator" id="segmentIndicator"></span>
+        <button class="nav-btn active" data-section="overview">概览</button>
+        <button class="nav-btn" data-section="site-config">站点配置</button>
+        <button class="nav-btn" data-section="order-config">订单配置</button>
+        <button class="nav-btn" data-section="deposit-review">充值审核</button>
+        <button class="nav-btn" data-section="withdraw-review">提现审核</button>
+        <button class="nav-btn" data-section="admin-settings">管理员</button>
+      </nav>
+      <button class="btn ghost" id="logoutBtn">退出登录</button>
+    </header>
+
+    <main>
+      <section class="section active" id="overview">
+        <div class="metric-grid">
+          <article class="card glass metric">
+            <span>待审充值</span>
+            <strong id="metricDeposits">0</strong>
+          </article>
+          <article class="card glass metric">
+            <span>待审提现</span>
+            <strong id="metricWithdraws">0</strong>
+          </article>
+          <article class="card glass metric">
+            <span>订单模板数</span>
+            <strong id="metricProducts">0</strong>
+          </article>
+          <article class="card glass metric">
+            <span>注册用户</span>
+            <strong id="metricUsers">0</strong>
+          </article>
+        </div>
+
+        <div class="overview-grid">
+          <article class="card glass">
+            <h3>待处理队列</h3>
+            <ul class="list" id="pendingList"></ul>
+          </article>
+          <article class="card glass">
+            <h3>快捷操作</h3>
+            <div class="action-grid">
+              <button class="btn ghost" data-jump="site-config">编辑首页与协议</button>
+              <button class="btn ghost" data-jump="order-config">配置订单区间</button>
+              <button class="btn ghost" data-jump="deposit-review">处理充值申请</button>
+              <button class="btn ghost" data-jump="withdraw-review">处理提现申请</button>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="site-config">
+        <article class="card glass">
+          <h3>站点配置</h3>
+          <p class="hint">此处用于维护前台展示内容与收款信息，联调后可直接接数据库配置表。</p>
+          <form id="siteConfigForm">
+            <div class="field-row">
+              <div class="field">
+                <label for="brandSubtitle">品牌副标题</label>
+                <input id="brandSubtitle" type="text" />
+              </div>
+              <div class="field">
+                <label for="homeChip">首页标签</label>
+                <input id="homeChip" type="text" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="homeTitle">首页主标题</label>
+              <input id="homeTitle" type="text" />
+            </div>
+            <div class="field">
+              <label for="homeDesc">首页描述</label>
+              <textarea id="homeDesc" rows="3"></textarea>
+            </div>
+            <div class="field-row">
+              <div class="field">
+                <label for="payDigitalAddress">数字收款地址</label>
+                <input id="payDigitalAddress" type="text" />
+              </div>
+              <div class="field">
+                <label for="payBankName">收款开户行</label>
+                <input id="payBankName" type="text" />
+              </div>
+            </div>
+            <div class="field-row">
+              <div class="field">
+                <label for="payBankAccountName">收款户名</label>
+                <input id="payBankAccountName" type="text" />
+              </div>
+              <div class="field">
+                <label for="payBankAccountNo">收款卡号</label>
+                <input id="payBankAccountNo" type="text" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="payBankBranch">收款支行</label>
+              <input id="payBankBranch" type="text" />
+            </div>
+            <div class="field">
+              <label for="agreementText">用户协议内容</label>
+              <textarea id="agreementText" rows="8"></textarea>
+            </div>
+            <button class="btn primary" type="submit">保存站点配置</button>
+          </form>
+        </article>
+      </section>
+
+      <section class="section" id="order-config">
+        <article class="card glass">
+          <h3>订单收益配置</h3>
+          <p class="hint">支持“全局默认区间 + 订单独立区间覆盖”。订单勾选独立区间后优先使用该区间。</p>
+          <div class="field-row">
+            <div class="field">
+              <label for="defaultMinRate">全局默认最小收益率 (%)</label>
+              <input id="defaultMinRate" type="number" min="0" step="0.01" />
+            </div>
+            <div class="field">
+              <label for="defaultMaxRate">全局默认最大收益率 (%)</label>
+              <input id="defaultMaxRate" type="number" min="0" step="0.01" />
+            </div>
+          </div>
+          <div class="order-config-list" id="orderConfigList"></div>
+          <div class="row-actions">
+            <button class="btn ghost" id="addOrderTemplateBtn" type="button">新增订单模板</button>
+            <button class="btn primary" id="saveOrderConfigBtn" type="button">保存订单配置</button>
+          </div>
+        </article>
+      </section>
+
+      <section class="section" id="deposit-review">
+        <article class="card glass">
+          <h3>充值审核</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>用户</th>
+                  <th>金额</th>
+                  <th>方式</th>
+                  <th>凭证</th>
+                  <th>提交时间</th>
+                  <th>状态</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="depositTableBody"></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section class="section" id="withdraw-review">
+        <article class="card glass">
+          <h3>提现审核</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>用户</th>
+                  <th>金额</th>
+                  <th>方式</th>
+                  <th>收款信息</th>
+                  <th>提交时间</th>
+                  <th>状态</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="withdrawTableBody"></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section class="section" id="admin-settings">
+        <article class="card glass">
+          <h3>管理员设置</h3>
+          <div class="field-row">
+            <div class="field">
+              <label>当前账号</label>
+              <input id="currentAdmin" type="text" value="admin" readonly />
+            </div>
+            <div class="field">
+              <label for="newAdminPassword">新密码</label>
+              <input id="newAdminPassword" type="password" placeholder="至少 8 位" />
+            </div>
+          </div>
+          <button class="btn primary" id="saveAdminBtn" type="button">更新管理员密码</button>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="./app.js"></script>
+</body>
+</html>
