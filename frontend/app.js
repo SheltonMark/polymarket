@@ -1,69 +1,23 @@
-﻿const state = {
+﻿const API_BASE = "";
+const USER_TOKEN_KEY = "lockpro_user_token";
+
+const state = {
+  token: localStorage.getItem(USER_TOKEN_KEY) || "",
   user: {
-    username: "sunny168",
-    registered: false,
+    id: "",
+    username: "游客",
+    status: "未登录",
     loggedIn: false,
   },
   wallet: {
-    available: 1260.0,
+    available: 0,
     frozen: 0,
     totalProfit: 0,
   },
   chartSeries: [],
   activeRange: "day",
   orderPreviewLimit: 4,
-  products: [
-    {
-      id: "od_301",
-      name: "Prime Growth",
-      subtitle: "热门订单池，活跃度高",
-      minAmount: 120,
-      durationMs: 38 * 1000,
-      minRate: 0.018,
-      maxRate: 0.042,
-      status: "open",
-    },
-    {
-      id: "od_302",
-      name: "Event Alpha",
-      subtitle: "跨市场组合，流动性稳定",
-      minAmount: 220,
-      durationMs: 55 * 1000,
-      minRate: 0.02,
-      maxRate: 0.038,
-      status: "open",
-    },
-    {
-      id: "od_303",
-      name: "Momentum Core",
-      subtitle: "中高频策略组合，成交活跃",
-      minAmount: 360,
-      durationMs: 70 * 1000,
-      minRate: 0.022,
-      maxRate: 0.05,
-      status: "open",
-    },
-    {
-      id: "od_304",
-      name: "Value Matrix",
-      subtitle: "多市场覆盖，策略稳定",
-      minAmount: 180,
-      durationMs: 52 * 1000,
-      minRate: 0.019,
-      maxRate: 0.041,
-      status: "open",
-    },
-    {
-      id: "od_305",
-      name: "Pulse Select",
-      subtitle: "快节奏标的池，流转效率高",
-      minAmount: 260,
-      durationMs: 66 * 1000,
-      minRate: 0.02,
-      maxRate: 0.048,
-      status: "open",
-    },
-  ],
+  products: [],
   selectedProductId: null,
   orderHistory: [],
   depositRecords: [],
@@ -82,25 +36,19 @@
 const defaultSiteConfig = {
   brandSubtitle: "Digital Asset Workspace",
   payment: {
-    digitalAddress: "TRON-TX5V8ZVQ2FJ3L8KM9P6S1N4Q7R2W0YH8J",
+    digitalAddress: "",
     bank: {
-      bankName: "招商银行",
-      accountName: "平台结算账户",
-      accountNo: "6225 8888 7766 1098",
-      branch: "深圳南山支行",
+      bankName: "",
+      accountName: "",
+      accountNo: "",
+      branch: "",
     },
   },
-  agreementText: `【用户协议】
-
-1. 用户在注册前应完整阅读并同意本协议条款。
-2. 用户需确保提交的账户与收款信息真实、有效、可核验。
-3. 平台有权依据风控规则对异常行为进行限制或进一步核验。
-4. 用户应妥善保管账号与密码，因个人原因造成的损失由用户承担。
-5. 本协议最终解释与更新说明以平台最新发布版本为准。`,
+  agreementText: "",
   home: {
     tag: "内容专栏",
-    title: "LockPro 深度内容中心",
-    description: "围绕量化策略、系统逻辑和行业动态持续更新，支持按专题筛选并查看完整文章详情。",
+    title: "LockPro 内容中心",
+    description: "围绕策略、系统和时事持续更新。",
     quickActions: [
       { label: "进入交易中心", target: "trade", variant: "primary" },
       { label: "打开个人中心", target: "profile", variant: "ghost" },
@@ -110,74 +58,7 @@ const defaultSiteConfig = {
       { id: "system", label: "系统说明" },
       { id: "news", label: "区块链时事新闻" },
     ],
-    articles: [
-      {
-        id: "art_001",
-        topicId: "hedge",
-        title: "量化对冲套利的核心框架与执行边界",
-        summary: "拆解对冲套利的信号生成、仓位控制和执行节奏，明确策略在不同波动阶段的适用条件。",
-        content:
-          "量化对冲套利的目标不是追求单笔极值收益，而是通过高纪律、可重复的执行提升总体稳定性。\n\n在执行层面，需要优先控制风险敞口和仓位结构，其次才是进场时机优化。通过持续校准参数，可以减少市场噪音对结果的冲击。\n\n系统化的复盘机制同样关键，它决定了策略能否在环境变化中保持适应能力。",
-        author: "LockPro Research",
-        publishedAt: "2026-04-10",
-        hot: true,
-      },
-      {
-        id: "art_002",
-        topicId: "system",
-        title: "系统说明：从信号到结果的闭环设计",
-        summary: "说明指标、阈值、执行和复盘之间的关系，帮助用户快速理解策略为什么有效。",
-        content:
-          "策略逻辑的关键在于闭环：信号识别、条件确认、执行动作和结果反馈必须形成一致链路。\n\n如果缺少反馈层，模型就无法对偏差进行修正，长期表现会逐步退化。\n\n因此我们在设计时强调可解释、可验证、可追踪，确保每个步骤都有明确输入输出。",
-        author: "LockPro Research",
-        publishedAt: "2026-04-09",
-        hot: false,
-      },
-      {
-        id: "art_003",
-        topicId: "hedge",
-        title: "策略解读：如何根据资金规模安排下单节奏",
-        summary: "结合资金体量和风险偏好，给出更稳健的下单节奏建议，避免集中暴露。",
-        content:
-          "策略执行中常见问题是仓位过度集中。更稳妥的方式是分段下单并设置明确的复核节点。\n\n对于不同资金规模，建议采用不同的分配比例和执行间隔，以降低阶段性波动带来的影响。\n\n下单节奏不是固定模板，而是需要随着市场环境与账户状态动态调整。",
-        author: "LockPro Strategy Team",
-        publishedAt: "2026-04-08",
-        hot: false,
-      },
-      {
-        id: "art_004",
-        topicId: "system",
-        title: "系统优势解读：为什么强调流程一致性",
-        summary: "通过统一流程与可视化记录，降低人工操作偏差，提升整体执行效率。",
-        content:
-          "流程一致性能显著降低执行误差。统一的操作路径有助于团队协作，也能让用户更快定位关键信息。\n\n在系统层面，清晰的状态反馈和记录链路，使得每一步操作都能追溯并复查。\n\n这类优势不会在单次操作中完全体现，但会在长期使用中持续放大。",
-        author: "LockPro Product",
-        publishedAt: "2026-04-07",
-        hot: false,
-      },
-      {
-        id: "art_005",
-        topicId: "system",
-        title: "系统说明：账户、订单与记录模块如何协同",
-        summary: "梳理首页、交易中心、个人中心的协同关系，明确各模块的使用路径。",
-        content:
-          "账户模块负责资金与状态展示，交易模块负责下单与订单跟踪，记录模块负责历史查询与复核。\n\n三者的协同设计目标是降低切换成本、减少重复输入、提高信息一致性。\n\n当模块边界清晰后，后续联调和后台配置也会更直接。",
-        author: "LockPro Product",
-        publishedAt: "2026-04-06",
-        hot: false,
-      },
-      {
-        id: "art_006",
-        topicId: "news",
-        title: "区块链时事速览：近期市场情绪与风险关注点",
-        summary: "从资金流向和波动特征出发，提炼近期值得关注的行业动态与风险提示。",
-        content:
-          "市场情绪通常会在短周期内快速切换，热点题材往往伴随更高波动。\n\n对普通用户而言，保持节奏稳定比追逐短时情绪更重要。\n\n建议在观察行业动态时，始终结合自身仓位结构与风险承受能力。",
-        author: "LockPro News Desk",
-        publishedAt: "2026-04-05",
-        hot: true,
-      },
-    ],
+    articles: [],
   },
 };
 
@@ -192,7 +73,7 @@ function qq(selector) {
 }
 
 function money(value) {
-  return `$${Number(value).toFixed(2)}`;
+  return `$${Number(value || 0).toFixed(2)}`;
 }
 
 function showToast(message, isError = false) {
@@ -205,12 +86,43 @@ function showToast(message, isError = false) {
   toastTimer = setTimeout(() => toast.classList.remove("show"), 2200);
 }
 
-function walletTotal() {
-  return state.wallet.available + state.wallet.frozen;
+async function apiRequest(path, options = {}) {
+  const { method = "GET", body } = options;
+  const headers = { Accept: "application/json" };
+
+  if (state.token) {
+    headers.Authorization = `Bearer ${state.token}`;
+  }
+
+  let payload;
+  if (body && !(body instanceof FormData)) {
+    headers["Content-Type"] = "application/json";
+    payload = JSON.stringify(body);
+  } else {
+    payload = body;
+  }
+
+  const response = await fetch(`${API_BASE}${path}`, {
+    method,
+    headers,
+    body: payload,
+  });
+
+  const isJson = (response.headers.get("content-type") || "").includes("application/json");
+  const data = isJson ? await response.json() : null;
+
+  if (!response.ok) {
+    const message = data?.message || `请求失败(${response.status})`;
+    const error = new Error(message);
+    error.status = response.status;
+    throw error;
+  }
+
+  return data;
 }
 
-function randomBetween(min, max) {
-  return min + Math.random() * (max - min);
+function walletTotal() {
+  return Number(state.wallet.available || 0) + Number(state.wallet.frozen || 0);
 }
 
 function safeString(value, fallback = "") {
@@ -218,24 +130,66 @@ function safeString(value, fallback = "") {
 }
 
 function safeArray(value, fallback = []) {
-  return Array.isArray(value) && value.length ? value : fallback;
+  return Array.isArray(value) ? value : fallback;
+}
+
+function formatDateText(text) {
+  if (!text) return "--";
+  const date = new Date(text);
+  if (Number.isNaN(date.getTime())) return text;
+  return date.toLocaleDateString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" });
+}
+
+function updateSegmentIndicator(container, selector, indicator) {
+  if (!container || !indicator) return;
+  const active = container.querySelector(selector);
+  if (!active) return;
+  const cRect = container.getBoundingClientRect();
+  const aRect = active.getBoundingClientRect();
+  const left = aRect.left - cRect.left;
+  indicator.style.width = `${aRect.width}px`;
+  indicator.style.transform = `translateX(${left}px)`;
+}
+
+function refreshAllSegmentIndicators() {
+  updateSegmentIndicator(q("#mainNav"), ".nav-btn.active", q("#segmentIndicator"));
+  updateSegmentIndicator(q("#timeFilter"), ".time-btn.active", q("#timeIndicator"));
+  updateSegmentIndicator(q("#homeTopicTabs"), ".home-topic-btn.active", q("#homeTopicIndicator"));
+  updateSegmentIndicator(q("#authTabs"), ".auth-tab.active", q("#authIndicator"));
+}
+
+function switchSection(id) {
+  qq(".section").forEach((section) => section.classList.toggle("active", section.id === id));
+  qq(".nav-btn[data-section]").forEach((btn) => btn.classList.toggle("active", btn.dataset.section === id));
+}
+
+function initNav() {
+  qq(".nav-btn[data-section]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      switchSection(btn.dataset.section);
+      refreshAllSegmentIndicators();
+    });
+  });
+
+  document.addEventListener("click", (event) => {
+    const jumpTarget = event.target.closest("[data-jump]");
+    if (!jumpTarget) return;
+    const section = jumpTarget.dataset.jump;
+    if (!section) return;
+    switchSection(section);
+    refreshAllSegmentIndicators();
+  });
 }
 
 function resolveHomeTopics(home) {
-  const topics = safeArray(home.topics, defaultSiteConfig.home.topics);
-  return topics
-    .map((item) => ({
-      id: safeString(item.id),
-      label: safeString(item.label, "未命名专题"),
-    }))
+  return safeArray(home.topics, defaultSiteConfig.home.topics)
+    .map((item) => ({ id: safeString(item.id), label: safeString(item.label, "未命名专题") }))
     .filter((item) => item.id);
 }
 
 function resolveHomeArticles(home, topics) {
   const topicLabelMap = Object.fromEntries(topics.map((topic) => [topic.id, topic.label]));
-  const source = safeArray(home.articles, defaultSiteConfig.home.articles);
-
-  return source
+  return safeArray(home.articles, defaultSiteConfig.home.articles)
     .map((item, index) => {
       const topicId = safeString(item.topicId, topics[0]?.id || "");
       return {
@@ -253,22 +207,13 @@ function resolveHomeArticles(home, topics) {
     .filter((item) => item.topicId);
 }
 
-function formatDateText(text) {
-  if (!text) return "--";
-  const date = new Date(text);
-  if (Number.isNaN(date.getTime())) return text;
-  return date.toLocaleDateString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" });
-}
-
 function renderHomeTopics(topics) {
   const root = q("#homeTopicTabs");
   if (!root) return;
 
   root.querySelectorAll(".home-topic-btn").forEach((button) => button.remove());
-
   const list = [{ id: "all", label: "全部" }, ...topics];
-  const exists = list.some((item) => item.id === state.homeActiveTopic);
-  if (!exists) {
+  if (!list.some((item) => item.id === state.homeActiveTopic)) {
     state.homeActiveTopic = "all";
   }
 
@@ -288,33 +233,21 @@ function renderHomeTopics(topics) {
   });
 
   const activeTopic = list.find((item) => item.id === state.homeActiveTopic) || list[0];
-  const topicMeta = q("#homeTopicMeta");
-  if (topicMeta) {
-    topicMeta.textContent = activeTopic.id === "all" ? "全部文章" : activeTopic.label;
-  }
+  q("#homeTopicMeta").textContent = activeTopic.id === "all" ? "全部文章" : activeTopic.label;
 }
 
 function openHomeArticleModal(articleId) {
   const article = state.homeArticles.find((item) => item.id === articleId);
   if (!article) return;
 
-  state.selectedHomeArticleId = articleId;
-
-  const title = q("#homeArticleModalTitle");
+  q("#homeArticleModalTitle").textContent = article.title;
   const meta = q("#homeArticleModalMeta");
-  const content = q("#homeArticleModalContent");
-  if (!title || !meta || !content) return;
-
-  title.textContent = article.title;
   meta.innerHTML = "";
-
-  const metaItems = [article.topicLabel, article.author, formatDateText(article.publishedAt)];
-  metaItems.forEach((value) => {
+  [article.topicLabel, article.author, formatDateText(article.publishedAt)].forEach((value) => {
     const chip = document.createElement("span");
     chip.textContent = value;
     meta.appendChild(chip);
   });
-
   if (article.hot) {
     const hot = document.createElement("span");
     hot.className = "article-hot";
@@ -322,14 +255,13 @@ function openHomeArticleModal(articleId) {
     meta.appendChild(hot);
   }
 
+  const content = q("#homeArticleModalContent");
   content.innerHTML = "";
   const blocks = article.content
     .split(/\n+/)
     .map((line) => line.trim())
     .filter(Boolean);
-
-  const paragraphs = blocks.length ? blocks : [article.summary || "暂无正文内容"];
-  paragraphs.forEach((text) => {
+  (blocks.length ? blocks : [article.summary || "暂无正文内容"]).forEach((text) => {
     const p = document.createElement("p");
     p.textContent = text;
     content.appendChild(p);
@@ -346,17 +278,10 @@ function renderHomeArticles(articles) {
   const root = q("#homeArticleList");
   if (!root) return;
 
-  const filtered = state.homeActiveTopic === "all"
-    ? articles
-    : articles.filter((item) => item.topicId === state.homeActiveTopic);
-
-  const hint = q("#homeArticleHint");
-  if (hint) {
-    hint.textContent = `共 ${filtered.length} 篇`;
-  }
+  const filtered = state.homeActiveTopic === "all" ? articles : articles.filter((item) => item.topicId === state.homeActiveTopic);
+  q("#homeArticleHint").textContent = `共 ${filtered.length} 篇`;
 
   root.innerHTML = "";
-
   if (!filtered.length) {
     const empty = document.createElement("div");
     empty.className = "home-article-empty";
@@ -371,93 +296,43 @@ function renderHomeArticles(articles) {
     item.className = "home-article-item";
     item.addEventListener("click", () => openHomeArticleModal(article.id));
 
-    const head = document.createElement("div");
-    head.className = "article-item-head";
+    item.innerHTML = `
+      <div class="article-item-head">
+        <h4 class="article-item-title">${article.title}</h4>
+        <span class="article-topic">${article.topicLabel}</span>
+      </div>
+      <p class="article-item-summary">${article.summary}</p>
+      <div class="article-item-meta">
+        <span>${formatDateText(article.publishedAt)}</span>
+        <span>${article.author}</span>
+        ${article.hot ? '<span class="article-hot">热门</span>' : ""}
+      </div>
+    `;
 
-    const title = document.createElement("h4");
-    title.className = "article-item-title";
-    title.textContent = article.title;
-
-    const topic = document.createElement("span");
-    topic.className = "article-topic";
-    topic.textContent = article.topicLabel;
-
-    head.appendChild(title);
-    head.appendChild(topic);
-
-    const summary = document.createElement("p");
-    summary.className = "article-item-summary";
-    summary.textContent = article.summary;
-
-    const meta = document.createElement("div");
-    meta.className = "article-item-meta";
-
-    const date = document.createElement("span");
-    date.textContent = formatDateText(article.publishedAt);
-
-    const author = document.createElement("span");
-    author.textContent = article.author;
-
-    meta.appendChild(date);
-    meta.appendChild(author);
-
-    if (article.hot) {
-      const hot = document.createElement("span");
-      hot.className = "article-hot";
-      hot.textContent = "热门";
-      meta.appendChild(hot);
-    }
-
-    item.appendChild(head);
-    item.appendChild(summary);
-    item.appendChild(meta);
     root.appendChild(item);
   });
 }
 
 function renderHomeContent(home) {
-  const introTag = q("#homeIntroTag");
-  if (introTag) {
-    introTag.textContent = safeString(home.tag, defaultSiteConfig.home.tag);
-  }
-
-  const introTitle = q("#homeIntroTitle");
-  if (introTitle) {
-    introTitle.textContent = safeString(home.title, defaultSiteConfig.home.title);
-  }
-
-  const introDesc = q("#homeIntroDesc");
-  if (introDesc) {
-    introDesc.textContent = safeString(home.description, defaultSiteConfig.home.description);
-  }
+  q("#homeIntroTag").textContent = safeString(home.tag, defaultSiteConfig.home.tag);
+  q("#homeIntroTitle").textContent = safeString(home.title, defaultSiteConfig.home.title);
+  q("#homeIntroDesc").textContent = safeString(home.description, defaultSiteConfig.home.description);
 
   const actionRoot = q("#homeQuickActions");
-  if (actionRoot) {
-    actionRoot.innerHTML = "";
-    safeArray(home.quickActions, defaultSiteConfig.home.quickActions).forEach((item) => {
-      const btn = document.createElement("button");
-      btn.className = `btn ${item.variant === "ghost" ? "ghost" : "primary"}`;
-      btn.dataset.jump = safeString(item.target, "trade");
-      btn.textContent = safeString(item.label, "进入");
-      actionRoot.appendChild(btn);
-    });
-  }
+  actionRoot.innerHTML = "";
+  safeArray(home.quickActions, defaultSiteConfig.home.quickActions).forEach((item) => {
+    const btn = document.createElement("button");
+    btn.className = `btn ${item.variant === "ghost" ? "ghost" : "primary"}`;
+    btn.dataset.jump = safeString(item.target, "trade");
+    btn.textContent = safeString(item.label, "进入");
+    actionRoot.appendChild(btn);
+  });
 
   const topics = resolveHomeTopics(home);
   const articles = resolveHomeArticles(home, topics);
   state.homeArticles = articles;
-
   renderHomeTopics(topics);
   renderHomeArticles(articles);
-}
-
-function initHomeArticleModal() {
-  q("#closeHomeArticleModal")?.addEventListener("click", closeHomeArticleModal);
-  q("#homeArticleModalBackdrop")?.addEventListener("click", (event) => {
-    if (event.target.id === "homeArticleModalBackdrop") {
-      closeHomeArticleModal();
-    }
-  });
 }
 
 function applySiteConfig(config) {
@@ -466,30 +341,23 @@ function applySiteConfig(config) {
   state.agreementText = safeString(finalConfig.agreementText, defaultSiteConfig.agreementText);
 
   const subtitleNode = q(".brand-text p");
-  if (subtitleNode) {
-    subtitleNode.textContent = safeString(finalConfig.brandSubtitle, defaultSiteConfig.brandSubtitle);
-  }
+  if (subtitleNode) subtitleNode.textContent = safeString(finalConfig.brandSubtitle, defaultSiteConfig.brandSubtitle);
 
   const home = finalConfig.home || defaultSiteConfig.home;
   renderHomeContent(home);
 
   const paymentConfig = finalConfig.payment || defaultSiteConfig.payment;
-  const digitalAddress = safeString(paymentConfig.digitalAddress, defaultSiteConfig.payment.digitalAddress);
-  q("#usdtAddress").textContent = digitalAddress;
+  q("#usdtAddress").textContent = safeString(paymentConfig.digitalAddress, defaultSiteConfig.payment.digitalAddress);
 
   const bank = paymentConfig.bank || defaultSiteConfig.payment.bank;
-  const bankInfoRoot = q("#platformBankInfo");
-  bankInfoRoot.innerHTML = `
-    <div class="bank-line"><span>开户行</span><span>${safeString(bank.bankName, defaultSiteConfig.payment.bank.bankName)}</span></div>
-    <div class="bank-line"><span>户名</span><span>${safeString(bank.accountName, defaultSiteConfig.payment.bank.accountName)}</span></div>
-    <div class="bank-line"><span>卡号</span><span>${safeString(bank.accountNo, defaultSiteConfig.payment.bank.accountNo)}</span></div>
-    <div class="bank-line"><span>支行</span><span>${safeString(bank.branch, defaultSiteConfig.payment.bank.branch)}</span></div>
+  q("#platformBankInfo").innerHTML = `
+    <div class="bank-line"><span>开户行</span><span>${safeString(bank.bankName)}</span></div>
+    <div class="bank-line"><span>户名</span><span>${safeString(bank.accountName)}</span></div>
+    <div class="bank-line"><span>卡号</span><span>${safeString(bank.accountNo)}</span></div>
+    <div class="bank-line"><span>支行</span><span>${safeString(bank.branch)}</span></div>
   `;
 
-  const agreementNode = q("#agreementContent");
-  if (agreementNode) {
-    agreementNode.textContent = state.agreementText;
-  }
+  q("#agreementContent").textContent = state.agreementText;
 }
 
 function mergeSiteConfig(raw) {
@@ -515,41 +383,30 @@ function mergeSiteConfig(raw) {
 async function loadSiteConfig() {
   applySiteConfig(defaultSiteConfig);
   try {
-    const response = await fetch("/api/site-config", {
-      headers: { Accept: "application/json" },
-    });
-    if (!response.ok) return;
-    const payload = await response.json();
+    const payload = await apiRequest("/api/site-config");
     applySiteConfig(mergeSiteConfig(payload));
-  } catch (_error) {
-    // Keep default configuration when endpoint is unavailable.
+  } catch {
+    // keep default
   }
 }
 
-function buildInitialSeries() {
+function buildChartSeriesFromOrders() {
   const now = Date.now();
-  const points = 220;
-  const step = 6 * 60 * 60 * 1000;
-  let value = 960;
-  const series = [];
+  const base = Math.max(0, walletTotal() - state.wallet.totalProfit);
+  const points = [{ ts: now - 24 * 60 * 60 * 1000, value: base }];
 
-  for (let i = points - 1; i >= 0; i -= 1) {
-    const ts = now - i * step;
-    const drift = randomBetween(-18, 24);
-    value = Math.max(700, value + drift);
-    series.push({ ts, value: Number(value.toFixed(2)) });
-  }
-  return series;
-}
+  const doneOrders = [...state.orderHistory]
+    .filter((item) => item.status === "done")
+    .sort((a, b) => a.settleAt - b.settleAt);
 
-function pushChartPoint(amount) {
-  state.chartSeries.push({
-    ts: Date.now(),
-    value: Number(amount.toFixed(2)),
+  let runningValue = base;
+  doneOrders.forEach((order) => {
+    runningValue += Number(order.profit || 0);
+    points.push({ ts: order.settleAt, value: Number(runningValue.toFixed(2)) });
   });
-  if (state.chartSeries.length > 400) {
-    state.chartSeries = state.chartSeries.slice(-300);
-  }
+
+  points.push({ ts: now, value: walletTotal() });
+  state.chartSeries = points;
 }
 
 function downSample(data, maxPoints) {
@@ -580,18 +437,10 @@ function getSeriesByRange(range) {
 
   if (data.length < 2) {
     const latest = state.chartSeries[state.chartSeries.length - 1] || { ts: now, value: walletTotal() };
-    data = [
-      { ts: latest.ts - 1, value: latest.value },
-      latest,
-    ];
+    data = [{ ts: latest.ts - 1, value: latest.value }, latest];
   }
 
-  const maxByRange = {
-    day: 32,
-    week: 46,
-    month: 64,
-    all: 90,
-  };
+  const maxByRange = { day: 32, week: 46, month: 64, all: 90 };
   return downSample(data, maxByRange[range] || 64);
 }
 
@@ -601,6 +450,8 @@ function updateWalletView() {
   q("#metricFrozen").textContent = money(state.wallet.frozen);
   q("#metricProfit").textContent = money(state.wallet.totalProfit);
   q("#profileTotal").textContent = money(walletTotal());
+  q("#displayUsername").textContent = state.user.username || "游客";
+  q("#profileStatus").textContent = state.user.loggedIn ? "已登录" : "未登录";
 }
 
 function updateRangeStats(series) {
@@ -661,9 +512,7 @@ function drawPnlChart() {
 
   ctx.beginPath();
   ctx.moveTo(toX(0), toY(data[0].value));
-  for (let i = 1; i < data.length; i += 1) {
-    ctx.lineTo(toX(i), toY(data[i].value));
-  }
+  for (let i = 1; i < data.length; i += 1) ctx.lineTo(toX(i), toY(data[i].value));
   ctx.lineWidth = 2.6;
   ctx.strokeStyle = "#2fbf9f";
   ctx.stroke();
@@ -678,70 +527,13 @@ function drawPnlChart() {
   ctx.fillStyle = gradient;
   ctx.fill();
 
-  const lastPoint = data[data.length - 1];
+  const last = data[data.length - 1];
   const lx = toX(data.length - 1);
-  const ly = toY(lastPoint.value);
+  const ly = toY(last.value);
   ctx.beginPath();
   ctx.arc(lx, ly, 4, 0, Math.PI * 2);
   ctx.fillStyle = "#2fbf9f";
   ctx.fill();
-  ctx.fillStyle = "rgba(22, 43, 106, 0.74)";
-  ctx.font = "12px Manrope";
-  ctx.fillText(money(lastPoint.value), lx - 78, ly - 10);
-}
-
-function updateSegmentIndicator(container, selector, indicator) {
-  if (!container || !indicator) return;
-  const active = container.querySelector(selector);
-  if (!active) return;
-  const cRect = container.getBoundingClientRect();
-  const aRect = active.getBoundingClientRect();
-  const left = aRect.left - cRect.left;
-  indicator.style.width = `${aRect.width}px`;
-  indicator.style.transform = `translateX(${left}px)`;
-}
-
-function refreshAllSegmentIndicators() {
-  updateSegmentIndicator(q("#mainNav"), ".nav-btn.active", q("#segmentIndicator"));
-  updateSegmentIndicator(q("#timeFilter"), ".time-btn.active", q("#timeIndicator"));
-  updateSegmentIndicator(q("#homeTopicTabs"), ".home-topic-btn.active", q("#homeTopicIndicator"));
-  updateSegmentIndicator(q("#authTabs"), ".auth-tab.active", q("#authIndicator"));
-}
-
-function initNav() {
-  qq(".nav-btn[data-section]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      switchSection(btn.dataset.section);
-      refreshAllSegmentIndicators();
-    });
-  });
-
-  document.addEventListener("click", (event) => {
-    const jumpTarget = event.target.closest("[data-jump]");
-    if (!jumpTarget) return;
-    const section = jumpTarget.dataset.jump;
-    if (!section) return;
-    switchSection(section);
-    refreshAllSegmentIndicators();
-  });
-}
-
-function switchSection(id) {
-  qq(".section").forEach((section) => section.classList.toggle("active", section.id === id));
-  qq(".nav-btn[data-section]").forEach((btn) => btn.classList.toggle("active", btn.dataset.section === id));
-}
-
-function createOrderCode() {
-  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let suffix = "";
-  for (let i = 0; i < 6; i += 1) {
-    suffix += alphabet[Math.floor(Math.random() * alphabet.length)];
-  }
-  const date = new Date();
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `ODR${y}${m}${d}${suffix}`;
 }
 
 function renderProductCard(product, compact = false) {
@@ -751,14 +543,12 @@ function renderProductCard(product, compact = false) {
         <h4>${product.name}</h4>
         <span class="status done">开放中</span>
       </div>
-      <p>${product.subtitle}</p>
+      <p>${product.subtitle || ""}</p>
       <div class="meta-row">
         <span class="meta-pill">起投 ${money(product.minAmount)}</span>
         <span class="meta-pill">支持快速入场</span>
       </div>
-      <div style="margin-top:10px;">
-        <button class="btn primary sm" data-invest-id="${product.id}">立即下单</button>
-      </div>
+      <div style="margin-top:10px;"><button class="btn primary sm" data-invest-id="${product.id}">立即下单</button></div>
     `;
   }
 
@@ -767,14 +557,12 @@ function renderProductCard(product, compact = false) {
       <h4>${product.name}</h4>
       <span class="status done">开放中</span>
     </div>
-    <p>${product.subtitle}</p>
+    <p>${product.subtitle || ""}</p>
     <div class="meta-row">
       <span class="meta-pill">起投 ${money(product.minAmount)}</span>
       <span class="meta-pill">优先撮合</span>
     </div>
-    <div style="margin-top:10px;">
-      <button class="btn primary sm" data-invest-id="${product.id}">立即下单</button>
-    </div>
+    <div style="margin-top:10px;"><button class="btn primary sm" data-invest-id="${product.id}">立即下单</button></div>
   `;
 }
 
@@ -782,6 +570,23 @@ function bindInvestButtons(scopeRoot = document) {
   scopeRoot.querySelectorAll("[data-invest-id]").forEach((btn) => {
     btn.onclick = () => openOrderModal(btn.dataset.investId);
   });
+}
+
+function renderAllProductsList() {
+  const root = q("#allProductsList");
+  root.innerHTML = "";
+  if (!state.products.length) {
+    root.innerHTML = '<div class="order-item">暂无可用订单</div>';
+    return;
+  }
+
+  state.products.forEach((product) => {
+    const item = document.createElement("article");
+    item.className = "order-item all-product-item";
+    item.innerHTML = renderProductCard(product, false);
+    root.appendChild(item);
+  });
+  bindInvestButtons(root);
 }
 
 function renderOrderProducts() {
@@ -808,40 +613,92 @@ function renderOrderProducts() {
   renderAllProductsList();
 }
 
-function renderAllProductsList() {
-  const root = q("#allProductsList");
-  if (!root) return;
-  root.innerHTML = "";
+function renderOrderHistory() {
+  const tbody = q("#orderHistoryBody");
+  tbody.innerHTML = "";
 
-  if (!state.products.length) {
-    root.innerHTML = `<div class="order-item">暂无可用订单</div>`;
+  if (!state.orderHistory.length) {
+    tbody.innerHTML = '<tr><td colspan="6">暂无订单记录</td></tr>';
     return;
   }
 
-  state.products.forEach((product) => {
-    const item = document.createElement("article");
-    item.className = "order-item all-product-item";
-    item.innerHTML = renderProductCard(product, false);
-    root.appendChild(item);
+  state.orderHistory.forEach((order) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${order.id}</td>
+      <td>${order.productName}</td>
+      <td>${money(order.amount)}</td>
+      <td>${money(order.profit)}</td>
+      <td><span class="status ${order.status === "done" ? "done" : "running"}">${order.status === "done" ? "已完成" : "进行中"}</span></td>
+      <td>${new Date(order.submittedAt).toLocaleString("zh-CN", { hour12: false })}</td>
+    `;
+    tbody.appendChild(tr);
   });
-
-  bindInvestButtons(root);
 }
 
-function getProductById(productId) {
-  return state.products.find((item) => item.id === productId);
+function renderRecords() {
+  const list = q("#recordList");
+  list.innerHTML = "";
+  let records = [];
+
+  if (state.recordType === "deposit") {
+    records = state.depositRecords.map((record) => ({
+      title: `充值申请 ${money(record.amount)}`,
+      desc: `方式：${record.method} ｜ 状态：${record.status}${record.reason ? ` ｜ 原因：${record.reason}` : ""}`,
+      time: record.time,
+    }));
+  } else if (state.recordType === "withdraw") {
+    records = state.withdrawRecords.map((record) => ({
+      title: `提现申请 ${money(record.amount)}`,
+      desc: `方式：${record.method} ｜ 状态：${record.status}${record.reason ? ` ｜ 原因：${record.reason}` : ""}`,
+      time: record.time,
+    }));
+  } else {
+    records = state.orderHistory.map((record) => ({
+      title: `${record.productName} ｜ ${money(record.amount)}`,
+      desc: `订单号：${record.id} ｜ 收益：${money(record.profit)} ｜ ${record.status === "done" ? "已完成" : "进行中"}`,
+      time: record.submittedAt,
+    }));
+  }
+
+  if (!records.length) {
+    list.innerHTML = '<li class="record-item">暂无记录</li>';
+    return;
+  }
+
+  records.forEach((record) => {
+    const li = document.createElement("li");
+    li.className = "record-item";
+    li.innerHTML = `
+      <div class="line-1"><span>${record.title}</span><span>${new Date(record.time).toLocaleString("zh-CN", { hour12: false })}</span></div>
+      <div class="line-2">${record.desc}</div>
+    `;
+    list.appendChild(li);
+  });
 }
 
 function closeProductsModal() {
   q("#productsModalBackdrop")?.classList.remove("open");
 }
 
+function openProductsModal() {
+  renderAllProductsList();
+  q("#productsModalBackdrop")?.classList.add("open");
+}
+
 function openOrderModal(productId) {
-  const product = getProductById(productId);
+  const product = state.products.find((item) => item.id === productId);
   if (!product) return;
+  if (!state.user.loggedIn) {
+    showToast("请先登录", true);
+    q("#authModalBackdrop").classList.add("open");
+    return;
+  }
+
   closeProductsModal();
   state.selectedProductId = productId;
   q("#selectedProductName").textContent = product.name;
+  q("#selectedProductMeta").textContent = `起投 ${money(product.minAmount)}，确认金额后提交。`;
   q("#orderAmount").value = "";
   q("#orderModalBackdrop").classList.add("open");
 }
@@ -850,109 +707,81 @@ function closeOrderModal() {
   q("#orderModalBackdrop").classList.remove("open");
 }
 
-function openProductsModal() {
-  renderAllProductsList();
-  q("#productsModalBackdrop")?.classList.add("open");
+function applySummary(summary) {
+  if (!summary) return;
+  state.user.id = summary.user.id;
+  state.user.username = summary.user.username;
+  state.user.status = summary.user.status;
+  state.user.loggedIn = true;
+
+  state.wallet.available = Number(summary.wallet.available || 0);
+  state.wallet.frozen = Number(summary.wallet.frozen || 0);
+  state.wallet.totalProfit = Number(summary.wallet.totalProfit || 0);
+
+  state.orderHistory = safeArray(summary.orderHistory, []);
+  state.depositRecords = safeArray(summary.depositRecords, []);
+  state.withdrawRecords = safeArray(summary.withdrawRecords, []);
+
+  buildChartSeriesFromOrders();
+  updateWalletView();
+  drawPnlChart();
+  renderOrderHistory();
+  renderRecords();
 }
 
-function createOrder(product, amount) {
-  const now = Date.now();
-  const order = {
-    id: createOrderCode(),
-    productName: product.name,
-    amount,
-    profit: 0,
-    status: "running",
-    submittedAt: now,
-    settleAt: now + product.durationMs,
-    minRate: product.minRate,
-    maxRate: product.maxRate,
-  };
-  state.orderHistory.unshift(order);
+async function loadProducts() {
+  try {
+    const payload = await apiRequest("/api/orders/templates");
+    state.products = safeArray(payload.products, []);
+  } catch {
+    state.products = [];
+  }
+  renderOrderProducts();
 }
 
-function submitOrder() {
-  const product = getProductById(state.selectedProductId);
+async function refreshUserSummary() {
+  if (!state.token) return;
+  const summary = await apiRequest("/api/me/summary");
+  applySummary(summary);
+}
+
+async function submitOrder() {
+  const product = state.products.find((item) => item.id === state.selectedProductId);
   const amount = Number(q("#orderAmount").value || 0);
   if (!product) {
     showToast("订单项目不存在", true);
     return;
   }
-  if (amount < product.minAmount) {
+  if (amount < Number(product.minAmount || 0)) {
     showToast(`当前项目最低金额 ${money(product.minAmount)}`, true);
     return;
   }
-  if (amount > state.wallet.available) {
-    showToast("可用余额不足", true);
-    return;
-  }
 
-  state.wallet.available -= amount;
-  state.wallet.frozen += amount;
-  createOrder(product, amount);
-  updateWalletView();
-  renderOrderHistory();
-  renderRecords();
-  pushChartPoint(walletTotal());
-  drawPnlChart();
-  closeOrderModal();
-  showToast("订单已提交");
-}
-
-function settleOrder(order) {
-  if (order.status === "done") return;
-  const rate = randomBetween(order.minRate, order.maxRate);
-  order.profit = Number((order.amount * rate).toFixed(2));
-  order.status = "done";
-  state.wallet.frozen -= order.amount;
-  state.wallet.available += order.amount + order.profit;
-  state.wallet.totalProfit += order.profit;
-}
-
-function settleDueOrders(force = false) {
-  const now = Date.now();
-  let count = 0;
-
-  state.orderHistory.forEach((order) => {
-    if (order.status === "running" && (force || now >= order.settleAt)) {
-      settleOrder(order);
-      count += 1;
-    }
-  });
-
-  if (count > 0) {
-    updateWalletView();
-    renderOrderHistory();
-    renderRecords();
-    pushChartPoint(walletTotal());
-    drawPnlChart();
-    showToast(`已更新 ${count} 条订单状态`);
+  try {
+    const payload = await apiRequest("/api/orders", {
+      method: "POST",
+      body: { templateId: product.id, amount },
+    });
+    applySummary(payload.summary);
+    closeOrderModal();
+    showToast("订单已提交");
+  } catch (error) {
+    showToast(error.message, true);
   }
 }
 
-function renderOrderHistory() {
-  const tbody = q("#orderHistoryBody");
-  tbody.innerHTML = "";
-
-  if (!state.orderHistory.length) {
-    tbody.innerHTML = `<tr><td colspan="6">暂无订单记录</td></tr>`;
-    return;
+async function settleDueOrders(force = false) {
+  if (!state.user.loggedIn) return;
+  try {
+    const payload = await apiRequest("/api/orders/settle", {
+      method: "POST",
+      body: { force },
+    });
+    applySummary(payload.summary);
+    if (payload.settledCount > 0) showToast(`已更新 ${payload.settledCount} 条订单状态`);
+  } catch (_error) {
+    // silent for interval checks
   }
-
-  state.orderHistory.forEach((order) => {
-    const tr = document.createElement("tr");
-    const statusClass = order.status === "done" ? "done" : "running";
-    const statusText = order.status === "done" ? "已完成" : "进行中";
-    tr.innerHTML = `
-      <td>${order.id}</td>
-      <td>${order.productName}</td>
-      <td>${money(order.amount)}</td>
-      <td>${money(order.profit)}</td>
-      <td><span class="status ${statusClass}">${statusText}</span></td>
-      <td>${new Date(order.submittedAt).toLocaleString("zh-CN", { hour12: false })}</td>
-    `;
-    tbody.appendChild(tr);
-  });
 }
 
 function copyAddress() {
@@ -964,7 +793,6 @@ function copyAddress() {
     );
     return;
   }
-
   const temp = document.createElement("textarea");
   temp.value = address;
   document.body.appendChild(temp);
@@ -974,19 +802,120 @@ function copyAddress() {
   showToast("地址已复制");
 }
 
+function initAuthChannelSelect() {
+  const root = q("#authChannelSelect");
+  const trigger = q("#authChannelTrigger");
+  const label = q("#authChannelLabel");
+  const input = q("#authChannel");
+  if (!root || !trigger || !label || !input) return;
+
+  trigger.addEventListener("click", (event) => {
+    event.stopPropagation();
+    root.classList.toggle("open");
+  });
+
+  qq(".custom-select-option").forEach((option) => {
+    option.addEventListener("click", () => {
+      const value = option.dataset.value || "account";
+      input.value = value;
+      label.textContent = option.textContent.trim();
+      qq(".custom-select-option").forEach((item) => item.classList.toggle("active", item === option));
+      root.classList.remove("open");
+    });
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!root.contains(event.target)) root.classList.remove("open");
+  });
+}
+
+function setAuthMode(mode) {
+  state.authMode = mode;
+  qq(".auth-tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.authType === mode));
+  const isRegister = mode === "register";
+  q("#confirmPasswordField").style.display = isRegister ? "block" : "none";
+  q("#agreementCheckRow").style.display = isRegister ? "inline-flex" : "none";
+  q("#authSubmitBtn").textContent = isRegister ? "立即注册" : "立即登录";
+  refreshAllSegmentIndicators();
+}
+
+function initAuth() {
+  q("#agreementContent").textContent = state.agreementText || defaultSiteConfig.agreementText;
+  initAuthChannelSelect();
+
+  q("#authBtn").addEventListener("click", () => q("#authModalBackdrop").classList.add("open"));
+  q("#closeAuthModal").addEventListener("click", () => q("#authModalBackdrop").classList.remove("open"));
+  q("#authModalBackdrop").addEventListener("click", (event) => {
+    if (event.target.id === "authModalBackdrop") q("#authModalBackdrop").classList.remove("open");
+  });
+
+  qq(".auth-tab").forEach((tab) => tab.addEventListener("click", () => setAuthMode(tab.dataset.authType)));
+
+  q("#openAgreementBtn").addEventListener("click", () => q("#agreementModalBackdrop").classList.add("open"));
+  q("#closeAgreementModal").addEventListener("click", () => q("#agreementModalBackdrop").classList.remove("open"));
+  q("#agreementModalBackdrop").addEventListener("click", (event) => {
+    if (event.target.id === "agreementModalBackdrop") q("#agreementModalBackdrop").classList.remove("open");
+  });
+
+  q("#authForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const username = q("#authUsername").value.trim();
+    const password = q("#authPassword").value.trim();
+    const confirmPassword = q("#authConfirmPassword").value.trim();
+    const agreed = q("#agreementCheck").checked;
+    const channel = q("#authChannel").value;
+
+    if (!username || !password) {
+      showToast("请输入账号和密码", true);
+      return;
+    }
+
+    try {
+      let payload;
+      if (state.authMode === "register") {
+        if (!confirmPassword || confirmPassword !== password) {
+          showToast("两次密码不一致", true);
+          return;
+        }
+        if (!agreed) {
+          showToast("请先勾选用户协议", true);
+          return;
+        }
+        payload = await apiRequest("/api/auth/register", {
+          method: "POST",
+          body: { username, password, channel },
+        });
+      } else {
+        payload = await apiRequest("/api/auth/login", {
+          method: "POST",
+          body: { username, password },
+        });
+      }
+
+      state.token = payload.token;
+      localStorage.setItem(USER_TOKEN_KEY, state.token);
+      applySummary(payload.summary);
+      q("#authForm").reset();
+      setAuthMode("login");
+      q("#authModalBackdrop").classList.remove("open");
+      showToast(state.authMode === "register" ? "注册成功" : "登录成功");
+    } catch (error) {
+      showToast(error.message, true);
+    }
+  });
+
+  setAuthMode("login");
+}
+
 function initPaymentForms() {
   q("#copyAddressBtn").addEventListener("click", copyAddress);
-  const depositScreenshotInput = q("#depositScreenshot");
-  const depositScreenshotHint = q("#depositScreenshotHint");
 
-  if (depositScreenshotInput && depositScreenshotHint) {
-    depositScreenshotInput.addEventListener("change", () => {
-      const file = depositScreenshotInput.files?.[0];
-      depositScreenshotHint.textContent = file
-        ? `已选择截图：${file.name}`
-        : "请上传清晰的转账截图，便于后台审核。";
-    });
-  }
+  const screenshotInput = q("#depositScreenshot");
+  const hint = q("#depositScreenshotHint");
+  screenshotInput.addEventListener("change", () => {
+    const file = screenshotInput.files?.[0];
+    hint.textContent = file ? `已选择截图：${file.name}` : "请上传清晰的转账截图，便于后台审核。";
+  });
 
   qq(".switch-btn[data-deposit-method]").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -1002,73 +931,76 @@ function initPaymentForms() {
   qq(".switch-btn[data-method]").forEach((btn) => {
     btn.addEventListener("click", () => {
       state.withdrawMethod = btn.dataset.method;
-      qq(".switch-btn[data-method]").forEach((item) => {
-        item.classList.toggle("active", item.dataset.method === state.withdrawMethod);
-      });
+      qq(".switch-btn[data-method]").forEach((item) => item.classList.toggle("active", item.dataset.method === state.withdrawMethod));
       q("#withdrawUSDT").classList.toggle("active", state.withdrawMethod === "usdt");
       q("#withdrawBank").classList.toggle("active", state.withdrawMethod === "bank");
     });
   });
 
-  q("#depositForm").addEventListener("submit", (event) => {
+  q("#depositForm").addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (!state.user.loggedIn) {
+      showToast("请先登录", true);
+      return;
+    }
+
     const amount = Number(q("#depositAmount").value || 0);
-    const screenshotFile = q("#depositScreenshot").files?.[0];
-    if (!amount || !screenshotFile) {
+    const file = screenshotInput.files?.[0];
+    if (!amount || !file) {
       showToast("请填写完整的充值信息", true);
       return;
     }
 
-    state.depositRecords.unshift({
-      amount,
-      screenshotName: screenshotFile.name,
-      method: state.depositMethod,
-      status: "待处理",
-      time: Date.now(),
-    });
+    const formData = new FormData();
+    formData.append("amount", String(amount));
+    formData.append("method", state.depositMethod);
+    formData.append("screenshot", file);
 
-    event.target.reset();
-    if (depositScreenshotHint) {
-      depositScreenshotHint.textContent = "请上传清晰的转账截图，便于后台审核。";
+    try {
+      const payload = await apiRequest("/api/deposits", { method: "POST", body: formData });
+      applySummary(payload.summary);
+      event.target.reset();
+      hint.textContent = "请上传清晰的转账截图，便于后台审核。";
+      showToast("充值申请已提交");
+    } catch (error) {
+      showToast(error.message, true);
     }
-    renderRecords();
-    showToast("充值申请已提交");
   });
 
-  q("#withdrawForm").addEventListener("submit", (event) => {
+  q("#withdrawForm").addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (!state.user.loggedIn) {
+      showToast("请先登录", true);
+      return;
+    }
+
     const amount = Number(q("#withdrawAmount").value || 0);
     if (!amount || amount > state.wallet.available) {
       showToast("提现金额不合法或超出余额", true);
       return;
     }
 
-    if (state.withdrawMethod === "usdt") {
-      if (!q("#withdrawUsdtAddress").value.trim()) {
-        showToast("请输入收款地址", true);
-        return;
-      }
-    } else if (!q("#bankName").value.trim() || !q("#bankOwner").value.trim() || !q("#bankNo").value.trim()) {
-      showToast("请完整填写银行卡信息", true);
-      return;
-    }
-
-    state.withdrawRecords.unshift({
+    const payload = {
       amount,
       method: state.withdrawMethod,
-      status: "待处理",
-      time: Date.now(),
-    });
+      usdtAddress: q("#withdrawUsdtAddress").value.trim(),
+      bankName: q("#bankName").value.trim(),
+      bankOwner: q("#bankOwner").value.trim(),
+      bankNo: q("#bankNo").value.trim(),
+    };
 
-    event.target.reset();
-    state.withdrawMethod = "usdt";
-    qq(".switch-btn[data-method]").forEach((btn) => {
-      btn.classList.toggle("active", btn.dataset.method === "usdt");
-    });
-    q("#withdrawUSDT").classList.add("active");
-    q("#withdrawBank").classList.remove("active");
-    renderRecords();
-    showToast("提现申请已提交");
+    try {
+      const data = await apiRequest("/api/withdrawals", { method: "POST", body: payload });
+      applySummary(data.summary);
+      event.target.reset();
+      state.withdrawMethod = "usdt";
+      qq(".switch-btn[data-method]").forEach((btn) => btn.classList.toggle("active", btn.dataset.method === "usdt"));
+      q("#withdrawUSDT").classList.add("active");
+      q("#withdrawBank").classList.remove("active");
+      showToast("提现申请已提交");
+    } catch (error) {
+      showToast(error.message, true);
+    }
   });
 }
 
@@ -1076,162 +1008,10 @@ function initRecordSwitch() {
   qq(".switch-btn[data-record]").forEach((btn) => {
     btn.addEventListener("click", () => {
       state.recordType = btn.dataset.record;
-      qq(".switch-btn[data-record]").forEach((item) => {
-        item.classList.toggle("active", item.dataset.record === state.recordType);
-      });
+      qq(".switch-btn[data-record]").forEach((item) => item.classList.toggle("active", item.dataset.record === state.recordType));
       renderRecords();
     });
   });
-}
-
-function renderRecords() {
-  const list = q("#recordList");
-  list.innerHTML = "";
-  let records = [];
-
-  if (state.recordType === "deposit") {
-    records = state.depositRecords.map((record) => ({
-      title: `充值申请 ${money(record.amount)}`,
-      desc: `方式：${record.method === "bank" ? "银行卡" : "数字地址"} ｜ 截图：${record.screenshotName || "未上传"} ｜ 状态：${record.status}`,
-      time: record.time,
-    }));
-  } else if (state.recordType === "withdraw") {
-    records = state.withdrawRecords.map((record) => ({
-      title: `提现申请 ${money(record.amount)}`,
-      desc: `方式：${record.method === "usdt" ? "数字地址" : "银行卡"} ｜ 状态：${record.status}`,
-      time: record.time,
-    }));
-  } else {
-    records = state.orderHistory.map((record) => ({
-      title: `${record.productName} ｜ ${money(record.amount)}`,
-      desc: `订单号：${record.id} ｜ 收益：${money(record.profit)} ｜ ${record.status === "done" ? "已完成" : "进行中"}`,
-      time: record.submittedAt,
-    }));
-  }
-
-  if (!records.length) {
-    list.innerHTML = `<li class="record-item">暂无记录</li>`;
-    return;
-  }
-
-  records.forEach((record) => {
-    const li = document.createElement("li");
-    li.className = "record-item";
-    li.innerHTML = `
-      <div class="line-1">
-        <span>${record.title}</span>
-        <span>${new Date(record.time).toLocaleString("zh-CN", { hour12: false })}</span>
-      </div>
-      <div class="line-2">${record.desc}</div>
-    `;
-    list.appendChild(li);
-  });
-}
-
-function setAuthMode(mode) {
-  state.authMode = mode;
-  qq(".auth-tab").forEach((tab) => {
-    tab.classList.toggle("active", tab.dataset.authType === mode);
-  });
-  const isRegister = mode === "register";
-  q("#confirmPasswordField").style.display = isRegister ? "block" : "none";
-  q("#agreementCheckRow").style.display = isRegister ? "inline-flex" : "none";
-  q("#authSubmitBtn").textContent = isRegister ? "立即注册" : "立即登录";
-  refreshAllSegmentIndicators();
-}
-
-function initAuthChannelSelect() {
-  const root = q("#authChannelSelect");
-  const trigger = q("#authChannelTrigger");
-  const menu = q("#authChannelMenu");
-  const label = q("#authChannelLabel");
-  const input = q("#authChannel");
-  if (!root || !trigger || !menu || !label || !input) return;
-
-  trigger.addEventListener("click", (event) => {
-    event.stopPropagation();
-    root.classList.toggle("open");
-  });
-
-  qq(".custom-select-option").forEach((option) => {
-    option.addEventListener("click", () => {
-      const value = option.dataset.value || "account";
-      const text = option.textContent.trim();
-      input.value = value;
-      label.textContent = text;
-      qq(".custom-select-option").forEach((item) => item.classList.toggle("active", item === option));
-      root.classList.remove("open");
-    });
-  });
-
-  document.addEventListener("click", (event) => {
-    if (!root.contains(event.target)) {
-      root.classList.remove("open");
-    }
-  });
-}
-
-function initAuth() {
-  q("#agreementContent").textContent = state.agreementText || defaultSiteConfig.agreementText;
-  initAuthChannelSelect();
-
-  q("#authBtn").addEventListener("click", () => q("#authModalBackdrop").classList.add("open"));
-  q("#closeAuthModal").addEventListener("click", () => q("#authModalBackdrop").classList.remove("open"));
-  q("#authModalBackdrop").addEventListener("click", (event) => {
-    if (event.target.id === "authModalBackdrop") q("#authModalBackdrop").classList.remove("open");
-  });
-
-  qq(".auth-tab").forEach((tab) => {
-    tab.addEventListener("click", () => setAuthMode(tab.dataset.authType));
-  });
-
-  q("#openAgreementBtn").addEventListener("click", () => q("#agreementModalBackdrop").classList.add("open"));
-  q("#closeAgreementModal").addEventListener("click", () => q("#agreementModalBackdrop").classList.remove("open"));
-  q("#agreementModalBackdrop").addEventListener("click", (event) => {
-    if (event.target.id === "agreementModalBackdrop") q("#agreementModalBackdrop").classList.remove("open");
-  });
-
-  q("#authForm").addEventListener("submit", (event) => {
-    event.preventDefault();
-    const username = q("#authUsername").value.trim();
-    const password = q("#authPassword").value.trim();
-    const confirmPassword = q("#authConfirmPassword").value.trim();
-    const agreed = q("#agreementCheck").checked;
-
-    if (!username || !password) {
-      showToast("请输入账号和密码", true);
-      return;
-    }
-
-    if (state.authMode === "register") {
-      if (!confirmPassword || confirmPassword !== password) {
-        showToast("两次密码不一致", true);
-        return;
-      }
-      if (!agreed) {
-        showToast("请先勾选用户协议", true);
-        return;
-      }
-      state.user.registered = true;
-      state.user.loggedIn = true;
-      state.user.username = username;
-      q("#displayUsername").textContent = username;
-      q("#profileStatus").textContent = "已登录";
-      showToast("注册成功");
-    } else {
-      state.user.loggedIn = true;
-      state.user.username = username;
-      q("#displayUsername").textContent = username;
-      q("#profileStatus").textContent = "已登录";
-      showToast("登录成功");
-    }
-
-    event.target.reset();
-    setAuthMode("login");
-    q("#authModalBackdrop").classList.remove("open");
-  });
-
-  setAuthMode("login");
 }
 
 function initOrderModal() {
@@ -1249,10 +1029,17 @@ function initOrderModal() {
 }
 
 function initProductsModal() {
-  q("#viewAllProductsBtn")?.addEventListener("click", openProductsModal);
-  q("#closeProductsModal")?.addEventListener("click", closeProductsModal);
-  q("#productsModalBackdrop")?.addEventListener("click", (event) => {
+  q("#viewAllProductsBtn").addEventListener("click", openProductsModal);
+  q("#closeProductsModal").addEventListener("click", closeProductsModal);
+  q("#productsModalBackdrop").addEventListener("click", (event) => {
     if (event.target.id === "productsModalBackdrop") closeProductsModal();
+  });
+}
+
+function initHomeArticleModal() {
+  q("#closeHomeArticleModal").addEventListener("click", closeHomeArticleModal);
+  q("#homeArticleModalBackdrop").addEventListener("click", (event) => {
+    if (event.target.id === "homeArticleModalBackdrop") closeHomeArticleModal();
   });
 }
 
@@ -1260,9 +1047,7 @@ function initTimeFilter() {
   qq(".time-btn[data-range]").forEach((btn) => {
     btn.addEventListener("click", () => {
       state.activeRange = btn.dataset.range;
-      qq(".time-btn[data-range]").forEach((item) => {
-        item.classList.toggle("active", item.dataset.range === state.activeRange);
-      });
+      qq(".time-btn[data-range]").forEach((item) => item.classList.toggle("active", item.dataset.range === state.activeRange));
       refreshAllSegmentIndicators();
       drawPnlChart();
     });
@@ -1271,47 +1056,47 @@ function initTimeFilter() {
 
 function initSettleControls() {
   q("#settleNowBtn").addEventListener("click", () => settleDueOrders(true));
-  setInterval(() => settleDueOrders(false), 1000);
+  setInterval(() => settleDueOrders(false), 15000);
 }
 
-function seedInitialData() {
-  state.chartSeries = buildInitialSeries();
-  const existingOrder = {
-    id: createOrderCode(),
-    productName: "Prime Growth",
-    amount: 260,
-    profit: 11.6,
-    status: "done",
-    submittedAt: Date.now() - 80 * 60 * 1000,
-    settleAt: Date.now() - 20 * 60 * 1000,
-    minRate: 0.018,
-    maxRate: 0.042,
-  };
-  state.orderHistory.push(existingOrder);
-  state.wallet.totalProfit = existingOrder.profit;
-  pushChartPoint(walletTotal() + existingOrder.profit);
+async function bootstrapUserSession() {
+  if (!state.token) {
+    buildChartSeriesFromOrders();
+    updateWalletView();
+    drawPnlChart();
+    renderOrderHistory();
+    renderRecords();
+    return;
+  }
+
+  try {
+    await refreshUserSummary();
+  } catch {
+    state.token = "";
+    localStorage.removeItem(USER_TOKEN_KEY);
+    buildChartSeriesFromOrders();
+    updateWalletView();
+    drawPnlChart();
+    renderOrderHistory();
+    renderRecords();
+  }
 }
 
 async function init() {
-  seedInitialData();
   initNav();
   initOrderModal();
   initProductsModal();
+  initHomeArticleModal();
   initTimeFilter();
   initPaymentForms();
   initRecordSwitch();
   initAuth();
-  initHomeArticleModal();
   initSettleControls();
 
-  renderOrderProducts();
-  renderOrderHistory();
-  renderRecords();
-  updateWalletView();
-
   await loadSiteConfig();
+  await loadProducts();
+  await bootstrapUserSession();
 
-  drawPnlChart();
   refreshAllSegmentIndicators();
 
   window.addEventListener("resize", () => {
@@ -1321,13 +1106,3 @@ async function init() {
 }
 
 init();
-
-
-
-
-
-
-
-
-
-

@@ -160,41 +160,9 @@
               <span class="hint">支持新增、编辑、发布/草稿、归档。</span>
             </div>
 
-            <form id="articleForm" class="form-block">
-              <input type="hidden" id="articleEditId" />
-              <div class="field-row">
-                <div class="field">
-                  <label for="articleCategory">分类</label>
-                  <select id="articleCategory" required>
-                    <option value="hedge">量化对冲套利</option>
-                    <option value="system">系统说明</option>
-                    <option value="news">区块链时事新闻</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label for="articleStatus">状态</label>
-                  <select id="articleStatus" required>
-                    <option value="published">已发布</option>
-                    <option value="draft">草稿</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="field">
-                <label for="articleTitle">标题</label>
-                <input id="articleTitle" type="text" required />
-              </div>
-
-              <div class="field">
-                <label for="articleContent">文章内容</label>
-                <textarea id="articleContent" rows="6" required></textarea>
-              </div>
-
-              <div class="row-actions">
-                <button class="btn primary" id="articleSubmitBtn" type="submit">保存文章</button>
-                <button class="btn ghost" id="articleResetBtn" type="button">清空</button>
-              </div>
-            </form>
+            <div class="row-actions" style="margin-bottom:12px;">
+              <button class="btn primary" id="openArticleModalBtn" type="button">新增文章</button>
+            </div>
 
             <div class="table-wrap">
               <table>
@@ -203,6 +171,7 @@
                     <th>标题</th>
                     <th>分类</th>
                     <th>状态</th>
+                    <th>热门</th>
                     <th>更新时间</th>
                     <th>操作</th>
                   </tr>
@@ -246,66 +215,9 @@
               <span class="hint">删除采用归档，不做物理删除，保证历史订单可追溯。</span>
             </div>
 
-            <form id="orderForm" class="form-block">
-              <input type="hidden" id="orderEditId" />
-
-              <div class="field-row">
-                <div class="field">
-                  <label for="orderTitle">标题</label>
-                  <input id="orderTitle" type="text" required />
-                </div>
-                <div class="field">
-                  <label for="orderTag">标签（可选）</label>
-                  <input id="orderTag" type="text" />
-                </div>
-              </div>
-
-              <div class="field">
-                <label for="orderDesc">描述（可选）</label>
-                <input id="orderDesc" type="text" />
-              </div>
-
-              <div class="field-row">
-                <div class="field">
-                  <label for="orderMinAmount">起投金额</label>
-                  <input id="orderMinAmount" type="number" min="1" step="0.01" required />
-                </div>
-                <div class="field">
-                  <label for="orderStatus">展示状态</label>
-                  <select id="orderStatus" required>
-                    <option value="on_shelf">上架</option>
-                    <option value="off_shelf">下架</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="field-row">
-                <div class="field">
-                  <label for="orderFreezeMin">冻结时间最小值（小时）</label>
-                  <input id="orderFreezeMin" type="number" min="1" step="1" required />
-                </div>
-                <div class="field">
-                  <label for="orderFreezeMax">冻结时间最大值（小时）</label>
-                  <input id="orderFreezeMax" type="number" min="1" step="1" required />
-                </div>
-              </div>
-
-              <div class="field-row">
-                <div class="field">
-                  <label for="orderRateMin">盈利比例最小值（%）</label>
-                  <input id="orderRateMin" type="number" min="0" step="0.01" required />
-                </div>
-                <div class="field">
-                  <label for="orderRateMax">盈利比例最大值（%）</label>
-                  <input id="orderRateMax" type="number" min="0" step="0.01" required />
-                </div>
-              </div>
-
-              <div class="row-actions">
-                <button class="btn primary" id="orderSubmitBtn" type="submit">保存订单模板</button>
-                <button class="btn ghost" id="orderResetBtn" type="button">清空</button>
-              </div>
-            </form>
+            <div class="row-actions" style="margin-bottom:12px;">
+              <button class="btn primary" id="openOrderModalBtn" type="button">新增订单模板</button>
+            </div>
 
             <div class="table-wrap">
               <table>
@@ -420,7 +332,155 @@
     </section>
   </div>
 
+    <div class="modal-backdrop" id="articleEditorModalBackdrop">
+    <div class="modal glass admin-editor-modal">
+      <div class="card-head">
+        <h3 id="articleModalTitle">新增文章</h3>
+        <button class="icon-btn" id="closeArticleEditorModal" aria-label="关闭">×</button>
+      </div>
+      <form id="articleForm" class="form-block">
+        <input type="hidden" id="articleEditId" />
+        <div class="field-row">
+          <div class="field">
+            <label for="articleCategory">分类</label>
+            <input type="hidden" id="articleCategory" value="hedge" />
+            <div class="custom-select admin-select" id="articleCategorySelect" role="listbox" aria-labelledby="articleCategory">
+              <button class="custom-select-trigger" type="button" id="articleCategoryTrigger">
+                <span id="articleCategoryLabel">量化对冲套利</span>
+                <span class="custom-select-arrow"></span>
+              </button>
+              <div class="custom-select-menu" id="articleCategoryMenu">
+                <button type="button" class="custom-select-option active" data-value="hedge">量化对冲套利</button>
+                <button type="button" class="custom-select-option" data-value="system">系统说明</button>
+                <button type="button" class="custom-select-option" data-value="news">区块链时事新闻</button>
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <label for="articleStatus">状态</label>
+            <input type="hidden" id="articleStatus" value="published" />
+            <div class="custom-select admin-select" id="articleStatusSelect" role="listbox" aria-labelledby="articleStatus">
+              <button class="custom-select-trigger" type="button" id="articleStatusTrigger">
+                <span id="articleStatusLabel">已发布</span>
+                <span class="custom-select-arrow"></span>
+              </button>
+              <div class="custom-select-menu" id="articleStatusMenu">
+                <button type="button" class="custom-select-option active" data-value="published">已发布</button>
+                <button type="button" class="custom-select-option" data-value="draft">草稿</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="check-row">
+            <input id="articleHot" type="checkbox" />
+            <span>标记为热门</span>
+          </label>
+        </div>
+
+        <div class="field">
+          <label for="articleTitle">标题</label>
+          <input id="articleTitle" type="text" required />
+        </div>
+
+        <div class="field">
+          <label for="articleContent">文章内容</label>
+          <textarea id="articleContent" rows="6" required></textarea>
+        </div>
+
+        <div class="row-actions">
+          <button class="btn primary" id="articleSubmitBtn" type="submit">保存文章</button>
+          <button class="btn ghost" id="articleResetBtn" type="button">清空</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="orderEditorModalBackdrop">
+    <div class="modal glass admin-editor-modal">
+      <div class="card-head">
+        <h3 id="orderModalTitle">新增订单模板</h3>
+        <button class="icon-btn" id="closeOrderEditorModal" aria-label="关闭">×</button>
+      </div>
+      <form id="orderForm" class="form-block">
+        <input type="hidden" id="orderEditId" />
+
+        <div class="field-row">
+          <div class="field">
+            <label for="orderTitle">标题</label>
+            <input id="orderTitle" type="text" required />
+          </div>
+          <div class="field">
+            <label for="orderTag">标签（可选）</label>
+            <input id="orderTag" type="text" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="orderDesc">描述（可选）</label>
+          <input id="orderDesc" type="text" />
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="orderMinAmount">起投金额</label>
+            <input id="orderMinAmount" type="number" min="1" step="0.01" required />
+          </div>
+          <div class="field">
+            <label for="orderStatus">展示状态</label>
+            <input type="hidden" id="orderStatus" value="on_shelf" />
+            <div class="custom-select admin-select" id="orderStatusSelect" role="listbox" aria-labelledby="orderStatus">
+              <button class="custom-select-trigger" type="button" id="orderStatusTrigger">
+                <span id="orderStatusLabel">上架</span>
+                <span class="custom-select-arrow"></span>
+              </button>
+              <div class="custom-select-menu" id="orderStatusMenu">
+                <button type="button" class="custom-select-option active" data-value="on_shelf">上架</button>
+                <button type="button" class="custom-select-option" data-value="off_shelf">下架</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="orderFreezeMin">冻结时间最小值（小时）</label>
+            <input id="orderFreezeMin" type="number" min="1" step="1" required />
+          </div>
+          <div class="field">
+            <label for="orderFreezeMax">冻结时间最大值（小时）</label>
+            <input id="orderFreezeMax" type="number" min="1" step="1" required />
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="orderRateMin">盈利比例最小值（%）</label>
+            <input id="orderRateMin" type="number" min="0" step="0.01" required />
+          </div>
+          <div class="field">
+            <label for="orderRateMax">盈利比例最大值（%）</label>
+            <input id="orderRateMax" type="number" min="0" step="0.01" required />
+          </div>
+        </div>
+
+        <div class="row-actions">
+          <button class="btn primary" id="orderSubmitBtn" type="submit">保存订单模板</button>
+          <button class="btn ghost" id="orderResetBtn" type="button">清空</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
   <script src="./app.js"></script>
 </body>
 </html>
+
+
+
+
+
+
+
