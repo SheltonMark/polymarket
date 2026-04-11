@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
@@ -10,7 +10,7 @@
     href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="/frontend/styles.css" />
 </head>
 <body>
   <div class="bg-layer bg-1"></div>
@@ -27,14 +27,14 @@
         </div>
       </div>
 
-      <nav class="main-nav liquid-segment" id="mainNav" aria-label="主导航">
+      <nav class="main-nav liquid-segment" id="mainNav" aria-label="������">
         <span class="segment-indicator" id="segmentIndicator"></span>
-        <button class="nav-btn active" data-section="home">首页</button>
-        <button class="nav-btn" data-section="trade">交易中心</button>
-        <button class="nav-btn" data-section="profile">个人中心</button>
+        <button class="nav-btn active" data-section="home">��ҳ</button>
+        <button class="nav-btn" data-section="trade">��������</button>
+        <button class="nav-btn" data-section="profile">��������</button>
       </nav>
 
-      <button class="btn ghost" id="authBtn">注册 / 登录</button>
+      <button class="btn ghost" id="authBtn">ע�� / ��¼</button>
     </header>
 
     <main>
@@ -43,9 +43,9 @@
           <article class="card glass home-intro-card">
             <div class="home-intro-head">
               <div>
-                <span class="chip tag-accent" id="homeIntroTag">内容专栏</span>
-                <h2 id="homeIntroTitle">LockPro 内容中心</h2>
-                <p id="homeIntroDesc">聚焦策略、原理和系统解读，支持按专题查看并快速打开详情。</p>
+                <span class="chip tag-accent" id="homeIntroTag">����ר��</span>
+                <h2 id="homeIntroTitle">LockPro ��������</h2>
+                <p id="homeIntroDesc">�۽����ԡ�ԭ����ϵͳ�����֧�ְ�ר��鿴�����ٴ����顣</p>
               </div>
               <div class="home-quick-actions" id="homeQuickActions"></div>
             </div>
@@ -53,8 +53,8 @@
 
           <article class="card glass home-topic-card">
             <div class="card-head">
-              <h3>专题分类</h3>
-              <span class="topic-meta" id="homeTopicMeta">全部文章</span>
+              <h3>ר�����</h3>
+              <span class="topic-meta" id="homeTopicMeta">ȫ������</span>
             </div>
             <div class="liquid-segment topic-segment" id="homeTopicTabs">
               <span class="segment-indicator" id="homeTopicIndicator"></span>
@@ -63,8 +63,8 @@
 
           <article class="card glass home-article-card">
             <div class="card-head">
-              <h3>文章列表</h3>
-              <span class="topic-meta" id="homeArticleHint">共 0 篇</span>
+              <h3>�����б�</h3>
+              <span class="topic-meta" id="homeArticleHint">�� 0 ƪ</span>
             </div>
             <div class="home-article-list" id="homeArticleList"></div>
           </article>
@@ -74,19 +74,19 @@
       <section class="section" id="trade">
         <div class="metric-grid">
           <article class="card glass metric">
-            <span>账户总额</span>
+            <span>�˻��ܶ�</span>
             <strong id="metricTotal">$0.00</strong>
           </article>
           <article class="card glass metric">
-            <span>可用余额</span>
+            <span>�������</span>
             <strong id="metricAvailable">$0.00</strong>
           </article>
           <article class="card glass metric">
-            <span>冻结金额</span>
+            <span>������</span>
             <strong id="metricFrozen">$0.00</strong>
           </article>
           <article class="card glass metric">
-            <span>累计收益</span>
+            <span>�ۼ�����</span>
             <strong id="metricProfit">$0.00</strong>
           </article>
         </div>
@@ -94,29 +94,29 @@
         <div class="trade-grid">
           <article class="card glass pnl-card">
             <div class="card-head">
-              <h3>收益曲线</h3>
+              <h3>��������</h3>
               <div class="time-filter liquid-segment small" id="timeFilter">
                 <span class="segment-indicator" id="timeIndicator"></span>
-                <button class="time-btn active" data-range="day">日</button>
-                <button class="time-btn" data-range="week">周</button>
-                <button class="time-btn" data-range="month">月</button>
-                <button class="time-btn" data-range="all">全部</button>
+                <button class="time-btn active" data-range="day">��</button>
+                <button class="time-btn" data-range="week">��</button>
+                <button class="time-btn" data-range="month">��</button>
+                <button class="time-btn" data-range="all">ȫ��</button>
               </div>
             </div>
 
-            <canvas id="pnlChart" width="760" height="280" aria-label="收益曲线图"></canvas>
+            <canvas id="pnlChart" width="760" height="280" aria-label="��������ͼ"></canvas>
 
             <div class="stats-row">
               <div class="stat-chip">
-                <span>区间收益</span>
+                <span>��������</span>
                 <strong id="rangeProfit">$0.00</strong>
               </div>
               <div class="stat-chip">
-                <span>区间最高</span>
+                <span>�������</span>
                 <strong id="rangeHigh">$0.00</strong>
               </div>
               <div class="stat-chip">
-                <span>区间最低</span>
+                <span>�������</span>
                 <strong id="rangeLow">$0.00</strong>
               </div>
             </div>
@@ -124,9 +124,9 @@
 
           <article class="card glass orders-card">
             <div class="card-head">
-              <h3>订单簿</h3>
+              <h3>������</h3>
               <div class="order-card-actions">
-                <button class="btn ghost sm view-all-btn" id="viewAllProductsBtn">查看全部</button>
+                <button class="btn ghost sm view-all-btn" id="viewAllProductsBtn">�鿴ȫ��</button>
               </div>
             </div>
             <div class="order-list" id="orderList"></div>
@@ -135,19 +135,19 @@
 
         <article class="card glass history-card">
           <div class="card-head">
-            <h3>订单记录</h3>
-            <button class="btn ghost sm" id="settleNowBtn">刷新状态</button>
+            <h3>������¼</h3>
+            <button class="btn ghost sm" id="settleNowBtn">ˢ��״̬</button>
           </div>
           <div class="table-wrap">
             <table>
               <thead>
                 <tr>
-                  <th>订单号</th>
-                  <th>项目</th>
-                  <th>金额</th>
-                  <th>收益</th>
-                  <th>状态</th>
-                  <th>提交时间</th>
+                  <th>������</th>
+                  <th>��Ŀ</th>
+                  <th>���</th>
+                  <th>����</th>
+                  <th>״̬</th>
+                  <th>�ύʱ��</th>
                 </tr>
               </thead>
               <tbody id="orderHistoryBody"></tbody>
@@ -159,73 +159,73 @@
       <section class="section" id="profile">
         <div class="profile-grid">
           <article class="card glass account-card">
-            <h3>账户信息</h3>
+            <h3>�˻���Ϣ</h3>
             <div class="account-meta">
               <div>
-                <span>用户名（昵称/电话/邮箱）</span>
+                <span>�û������ǳ�/�绰/���䣩</span>
                 <strong id="displayUsername">sunny168</strong>
               </div>
               <div>
-                <span>账户总额</span>
+                <span>�˻��ܶ�</span>
                 <strong id="profileTotal">$0.00</strong>
               </div>
               <div>
-                <span>账户状态</span>
-                <strong id="profileStatus">未登录</strong>
+                <span>�˻�״̬</span>
+                <strong id="profileStatus">δ��¼</strong>
               </div>
             </div>
           </article>
 
           <article class="card glass payment-card">
-            <h3>充值</h3>
-            <p class="hint">请先完成转账，再提交申请信息以便核对处理。</p>
+            <h3>��ֵ</h3>
+            <p class="hint">�������ת�ˣ����ύ������Ϣ�Ա�˶Դ�����</p>
             <div class="switch-row">
-              <button class="switch-btn active" type="button" data-deposit-method="digital">数字地址</button>
-              <button class="switch-btn" type="button" data-deposit-method="bank">银行卡</button>
+              <button class="switch-btn active" type="button" data-deposit-method="digital">���ֵ�ַ</button>
+              <button class="switch-btn" type="button" data-deposit-method="bank">���п�</button>
             </div>
             <div id="depositDigitalPanel" class="method-panel active">
-              <label class="label">平台收款地址</label>
+              <label class="label">ƽ̨�տ��ַ</label>
               <div class="address-row">
                 <code id="usdtAddress">TRON-TX5V8ZVQ2FJ3L8KM9P6S1N4Q7R2W0YH8J</code>
-                <button class="btn ghost sm" id="copyAddressBtn">复制</button>
+                <button class="btn ghost sm" id="copyAddressBtn">����</button>
               </div>
             </div>
             <div id="depositBankPanel" class="method-panel">
-              <label class="label">平台收款银行卡</label>
+              <label class="label">ƽ̨�տ����п�</label>
               <div class="bank-info" id="platformBankInfo"></div>
             </div>
             <form id="depositForm">
               <div class="field-row">
                 <div class="field">
-                  <label for="depositAmount">充值金额</label>
+                  <label for="depositAmount">��ֵ���</label>
                   <input id="depositAmount" type="number" min="1" step="0.01" required />
                 </div>
                 <div class="field">
-                  <label for="depositScreenshot">转账截图</label>
+                  <label for="depositScreenshot">ת�˽�ͼ</label>
                   <input id="depositScreenshot" type="file" accept="image/*" required />
                 </div>
               </div>
-              <p class="hint upload-hint" id="depositScreenshotHint">请上传清晰的转账截图，便于后台审核。</p>
-              <button class="btn primary" type="submit">提交充值申请</button>
+              <p class="hint upload-hint" id="depositScreenshotHint">���ϴ�������ת�˽�ͼ�����ں�̨��ˡ�</p>
+              <button class="btn primary" type="submit">�ύ��ֵ����</button>
             </form>
           </article>
 
           <article class="card glass payment-card">
-            <h3>提现</h3>
-            <p class="hint">提交信息后进入审核队列，处理完成后状态会更新。</p>
+            <h3>����</h3>
+            <p class="hint">�ύ��Ϣ�������˶��У�������ɺ�״̬����¡�</p>
             <form id="withdrawForm">
               <div class="field">
-                <label for="withdrawAmount">提现金额</label>
+                <label for="withdrawAmount">���ֽ��</label>
                 <input id="withdrawAmount" type="number" min="1" step="0.01" required />
               </div>
               <div class="switch-row">
-                <button class="switch-btn active" type="button" data-method="usdt">数字地址</button>
-                <button class="switch-btn" type="button" data-method="bank">银行卡</button>
+                <button class="switch-btn active" type="button" data-method="usdt">���ֵ�ַ</button>
+                <button class="switch-btn" type="button" data-method="bank">���п�</button>
               </div>
 
               <div id="withdrawUSDT" class="method-panel active">
                 <div class="field">
-                  <label for="withdrawUsdtAddress">收款地址</label>
+                  <label for="withdrawUsdtAddress">�տ��ַ</label>
                   <input id="withdrawUsdtAddress" type="text" />
                 </div>
               </div>
@@ -233,42 +233,42 @@
               <div id="withdrawBank" class="method-panel">
                 <div class="field-row">
                   <div class="field">
-                    <label for="bankName">开户行</label>
+                    <label for="bankName">������</label>
                     <input id="bankName" type="text" />
                   </div>
                   <div class="field">
-                    <label for="bankOwner">户名</label>
+                    <label for="bankOwner">����</label>
                     <input id="bankOwner" type="text" />
                   </div>
                 </div>
                 <div class="field">
-                  <label for="bankNo">银行卡号</label>
+                  <label for="bankNo">���п���</label>
                   <input id="bankNo" type="text" />
                 </div>
               </div>
-              <button class="btn primary" type="submit">提交提现申请</button>
+              <button class="btn primary" type="submit">�ύ��������</button>
             </form>
           </article>
 
           <article class="card glass records-card">
             <div class="card-head">
-              <h3>记录</h3>
+              <h3>��¼</h3>
               <div class="switch-row compact">
-                <button class="switch-btn active" type="button" data-record="deposit">充值记录</button>
-                <button class="switch-btn" type="button" data-record="withdraw">提现记录</button>
-                <button class="switch-btn" type="button" data-record="order">订单记录</button>
+                <button class="switch-btn active" type="button" data-record="deposit">��ֵ��¼</button>
+                <button class="switch-btn" type="button" data-record="withdraw">���ּ�¼</button>
+                <button class="switch-btn" type="button" data-record="order">������¼</button>
               </div>
             </div>
             <ul id="recordList" class="record-list"></ul>
           </article>
 
           <article class="card glass reserved-card">
-            <h3>扩展模块</h3>
-            <p class="hint">以下模块已预留入口，将在后续版本开放。</p>
+            <h3>��չģ��</h3>
+            <p class="hint">����ģ����Ԥ����ڣ����ں����汾���š�</p>
             <div class="reserved-actions">
-              <button class="btn ghost" disabled>推广</button>
-              <button class="btn ghost" disabled>用户等级</button>
-              <button class="btn ghost" disabled>社区奖励金</button>
+              <button class="btn ghost" disabled>�ƹ�</button>
+              <button class="btn ghost" disabled>�û��ȼ�</button>
+              <button class="btn ghost" disabled>����������</button>
             </div>
           </article>
         </div>
@@ -279,33 +279,33 @@
   <div class="modal-backdrop" id="orderModalBackdrop">
     <div class="modal glass order-modal">
       <div class="card-head">
-        <h3>下单确认</h3>
-        <button class="icon-btn" id="closeOrderModal" aria-label="关闭">×</button>
+        <h3>�µ�ȷ��</h3>
+        <button class="icon-btn" id="closeOrderModal" aria-label="�ر�">��</button>
       </div>
       <div class="modal-body">
         <p id="selectedProductName">-</p>
-        <p class="hint" id="selectedProductMeta">确认金额后提交，系统将自动生成订单号。</p>
+        <p class="hint" id="selectedProductMeta">ȷ�Ͻ����ύ��ϵͳ���Զ����ɶ����š�</p>
         <div class="field">
-          <label for="orderAmount">下单金额</label>
+          <label for="orderAmount">�µ����</label>
           <input id="orderAmount" type="number" min="1" step="0.01" />
         </div>
         <div class="quick-amounts">
           <button class="btn ghost sm" data-portion="0.25">25%</button>
           <button class="btn ghost sm" data-portion="0.5">50%</button>
-          <button class="btn ghost sm" data-portion="1">全部</button>
+          <button class="btn ghost sm" data-portion="1">ȫ��</button>
         </div>
       </div>
-      <button class="btn primary" id="confirmOrderBtn">确认下单</button>
+      <button class="btn primary" id="confirmOrderBtn">ȷ���µ�</button>
     </div>
   </div>
 
   <div class="modal-backdrop" id="productsModalBackdrop">
     <div class="modal glass products-modal">
       <div class="card-head">
-        <h3>全部订单</h3>
-        <button class="icon-btn" id="closeProductsModal" aria-label="关闭">×</button>
+        <h3>ȫ������</h3>
+        <button class="icon-btn" id="closeProductsModal" aria-label="�ر�">��</button>
       </div>
-      <p class="hint products-hint">可选择任意订单进行下单。</p>
+      <p class="hint products-hint">��ѡ�����ⶩ�������µ���</p>
       <div class="all-products-list" id="allProductsList"></div>
     </div>
   </div>
@@ -313,8 +313,8 @@
   <div class="modal-backdrop" id="homeArticleModalBackdrop">
     <div class="modal glass home-article-modal">
       <div class="card-head">
-        <h3 id="homeArticleModalTitle">文章详情</h3>
-        <button class="icon-btn" id="closeHomeArticleModal" aria-label="关闭">×</button>
+        <h3 id="homeArticleModalTitle">��������</h3>
+        <button class="icon-btn" id="closeHomeArticleModal" aria-label="�ر�">��</button>
       </div>
       <div class="article-modal-scroll">
         <div class="article-modal-meta" id="homeArticleModalMeta"></div>
@@ -327,57 +327,57 @@
     <div class="modal glass auth-modal">
       <div class="auth-head">
         <div>
-          <h3>账户入口</h3>
-          <p>欢迎回来，请先完成身份验证</p>
+          <h3>�˻����</h3>
+          <p>��ӭ�������������������֤</p>
         </div>
-        <button class="icon-btn" id="closeAuthModal" aria-label="关闭">×</button>
+        <button class="icon-btn" id="closeAuthModal" aria-label="�ر�">��</button>
       </div>
 
       <div class="auth-tabs liquid-segment small" id="authTabs">
         <span class="segment-indicator" id="authIndicator"></span>
-        <button class="auth-tab active" type="button" data-auth-type="login">登录</button>
-        <button class="auth-tab" type="button" data-auth-type="register">注册</button>
+        <button class="auth-tab active" type="button" data-auth-type="login">��¼</button>
+        <button class="auth-tab" type="button" data-auth-type="register">ע��</button>
       </div>
 
       <form class="modal-body" id="authForm">
         <div class="field">
-          <label for="authChannel">登录方式</label>
+          <label for="authChannel">��¼��ʽ</label>
           <input type="hidden" id="authChannel" value="account" />
           <div class="custom-select" id="authChannelSelect" role="listbox" aria-labelledby="authChannel">
             <button class="custom-select-trigger" type="button" id="authChannelTrigger">
-              <span id="authChannelLabel">账号登录</span>
+              <span id="authChannelLabel">�˺ŵ�¼</span>
               <span class="custom-select-arrow"></span>
             </button>
             <div class="custom-select-menu" id="authChannelMenu">
-              <button type="button" class="custom-select-option active" data-value="account">账号登录</button>
-              <button type="button" class="custom-select-option" data-value="email">邮箱登录</button>
-              <button type="button" class="custom-select-option" data-value="phone">手机号登录</button>
+              <button type="button" class="custom-select-option active" data-value="account">�˺ŵ�¼</button>
+              <button type="button" class="custom-select-option" data-value="email">�����¼</button>
+              <button type="button" class="custom-select-option" data-value="phone">�ֻ��ŵ�¼</button>
             </div>
           </div>
         </div>
 
         <div class="field-row">
           <div class="field">
-            <label for="authUsername">账号（昵称/电话/邮箱）</label>
+            <label for="authUsername">�˺ţ��ǳ�/�绰/���䣩</label>
             <input id="authUsername" type="text" required />
           </div>
           <div class="field">
-            <label for="authPassword">密码</label>
+            <label for="authPassword">����</label>
             <input id="authPassword" type="password" required />
           </div>
         </div>
 
         <div class="field" id="confirmPasswordField">
-          <label for="authConfirmPassword">确认密码</label>
+          <label for="authConfirmPassword">ȷ������</label>
           <input id="authConfirmPassword" type="password" />
         </div>
 
         <label class="check-row" id="agreementCheckRow">
           <input type="checkbox" id="agreementCheck" />
-          <span>我已阅读并同意 <button type="button" class="text-link" id="openAgreementBtn">《用户协议》</button></span>
+          <span>�����Ķ���ͬ�� <button type="button" class="text-link" id="openAgreementBtn">���û�Э�顷</button></span>
         </label>
 
-        <button class="btn primary auth-submit" type="submit" id="authSubmitBtn">立即登录</button>
+        <button class="btn primary auth-submit" type="submit" id="authSubmitBtn">������¼</button>
       </form>
     </div>
   </div>
@@ -385,8 +385,8 @@
   <div class="modal-backdrop" id="agreementModalBackdrop">
     <div class="modal glass agreement-modal">
       <div class="card-head">
-        <h3>用户协议</h3>
-        <button class="icon-btn" id="closeAgreementModal" aria-label="关闭">×</button>
+        <h3>�û�Э��</h3>
+        <button class="icon-btn" id="closeAgreementModal" aria-label="�ر�">��</button>
       </div>
       <div class="agreement-content" id="agreementContent"></div>
     </div>
@@ -394,6 +394,7 @@
 
   <div class="toast" id="toast"></div>
 
-  <script src="./app.js"></script>
+  <script src="/frontend/app.js"></script>
 </body>
 </html>
+
