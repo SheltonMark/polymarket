@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
@@ -21,220 +21,403 @@
     <article class="card glass login-card">
       <div class="login-head">
         <h1>LockPro 管理后台</h1>
-        <p>请先使用管理员账号登录</p>
+        <p>管理员登录后可配置首页内容、审核资金申请并管理用户与订单。</p>
       </div>
       <form id="loginForm">
         <div class="field">
           <label for="loginUsername">管理员账号</label>
-          <input id="loginUsername" type="text" placeholder="admin" required />
+          <input id="loginUsername" type="text" autocomplete="username" required />
         </div>
         <div class="field">
           <label for="loginPassword">登录密码</label>
-          <input id="loginPassword" type="password" placeholder="请输入密码" required />
+          <input id="loginPassword" type="password" autocomplete="current-password" required />
         </div>
         <button class="btn primary full" type="submit">登录后台</button>
       </form>
     </article>
   </section>
 
-  <div class="app-shell hidden" id="adminApp">
-    <header class="topbar glass">
-      <div class="brand">
+  <div class="admin-layout hidden" id="adminApp">
+    <aside class="sidebar glass">
+      <div class="sidebar-brand">
         <div class="brand-dot"></div>
         <div>
           <h1>LockPro Admin</h1>
-          <p>配置中心与审核台</p>
+          <p>配置与审核中心</p>
         </div>
       </div>
-      <nav class="main-nav liquid-segment" id="mainNav">
-        <span class="segment-indicator" id="segmentIndicator"></span>
-        <button class="nav-btn active" data-section="overview">概览</button>
-        <button class="nav-btn" data-section="site-config">站点配置</button>
-        <button class="nav-btn" data-section="order-config">订单配置</button>
-        <button class="nav-btn" data-section="deposit-review">充值审核</button>
-        <button class="nav-btn" data-section="withdraw-review">提现审核</button>
-        <button class="nav-btn" data-section="admin-settings">管理员</button>
+
+      <nav class="side-nav" id="sideNav">
+        <button class="menu-btn active" data-section="overview">数据概览</button>
+        <button class="menu-btn" data-section="home-manage">首页管理</button>
+        <button class="menu-btn" data-section="user-manage">用户管理</button>
+        <button class="menu-btn" data-section="order-manage">订单管理</button>
+        <button class="menu-btn" data-section="deposit-manage">充值管理</button>
+        <button class="menu-btn" data-section="withdraw-manage">提现管理</button>
+        <button class="menu-btn" data-section="agreement-manage">协议管理</button>
+        <button class="menu-btn" data-section="admin-settings">管理员设置</button>
       </nav>
-      <button class="btn ghost" id="logoutBtn">退出登录</button>
-    </header>
 
-    <main>
-      <section class="section active" id="overview">
-        <div class="metric-grid">
-          <article class="card glass metric">
-            <span>待审充值</span>
-            <strong id="metricDeposits">0</strong>
-          </article>
-          <article class="card glass metric">
-            <span>待审提现</span>
-            <strong id="metricWithdraws">0</strong>
-          </article>
-          <article class="card glass metric">
-            <span>订单模板数</span>
-            <strong id="metricProducts">0</strong>
-          </article>
-          <article class="card glass metric">
-            <span>注册用户</span>
-            <strong id="metricUsers">0</strong>
-          </article>
+      <div class="sidebar-foot">
+        <span class="dot"></span>
+        <span>后台在线</span>
+      </div>
+    </aside>
+
+    <section class="content-shell">
+      <header class="content-topbar glass">
+        <div>
+          <h2 id="pageTitle">数据概览</h2>
+          <p id="pageDesc">查看平台总览与待处理事项。</p>
         </div>
+        <button class="btn ghost" id="logoutBtn">退出登录</button>
+      </header>
 
-        <div class="overview-grid">
+      <main class="content-main">
+        <section class="section active" id="overview">
+          <div class="metric-grid">
+            <article class="card glass metric">
+              <span>用户总数</span>
+              <strong id="metricUserCount">0</strong>
+            </article>
+            <article class="card glass metric">
+              <span>启用账号</span>
+              <strong id="metricEnabledCount">0</strong>
+            </article>
+            <article class="card glass metric">
+              <span>上架订单模板</span>
+              <strong id="metricOrderOnShelf">0</strong>
+            </article>
+            <article class="card glass metric">
+              <span>待审充值</span>
+              <strong id="metricPendingDeposits">0</strong>
+            </article>
+            <article class="card glass metric">
+              <span>待审提现</span>
+              <strong id="metricPendingWithdraws">0</strong>
+            </article>
+            <article class="card glass metric">
+              <span>可用余额汇总</span>
+              <strong id="metricWalletAvailable">$0.00</strong>
+            </article>
+            <article class="card glass metric">
+              <span>冻结余额汇总</span>
+              <strong id="metricWalletFrozen">$0.00</strong>
+            </article>
+            <article class="card glass metric">
+              <span>文章总数</span>
+              <strong id="metricArticleCount">0</strong>
+            </article>
+          </div>
+
+          <div class="split-grid">
+            <article class="card glass">
+              <div class="card-head">
+                <h3>待处理事项</h3>
+              </div>
+              <ul class="list" id="pendingList"></ul>
+              <div class="quick-actions">
+                <button class="btn ghost sm" data-jump="deposit-manage">去审核充值</button>
+                <button class="btn ghost sm" data-jump="withdraw-manage">去审核提现</button>
+                <button class="btn ghost sm" data-jump="order-manage">去管理订单</button>
+              </div>
+            </article>
+
+            <article class="card glass">
+              <div class="card-head">
+                <h3>最近操作</h3>
+              </div>
+              <ul class="list" id="recentActivityList"></ul>
+            </article>
+          </div>
+        </section>
+
+        <section class="section" id="home-manage">
           <article class="card glass">
-            <h3>待处理队列</h3>
-            <ul class="list" id="pendingList"></ul>
+            <h3>首页基础信息</h3>
+            <form id="homeConfigForm">
+              <div class="field-row">
+                <div class="field">
+                  <label for="homeTitle">首页标题</label>
+                  <input id="homeTitle" type="text" required />
+                </div>
+                <div class="field">
+                  <label for="homeSubtitle">首页副标题</label>
+                  <input id="homeSubtitle" type="text" required />
+                </div>
+              </div>
+              <div class="field">
+                <label for="homeDescription">首页说明</label>
+                <textarea id="homeDescription" rows="3" required></textarea>
+              </div>
+              <button class="btn primary" type="submit">保存首页信息</button>
+            </form>
           </article>
+
           <article class="card glass">
-            <h3>快捷操作</h3>
-            <div class="action-grid">
-              <button class="btn ghost" data-jump="site-config">编辑首页与协议</button>
-              <button class="btn ghost" data-jump="order-config">配置订单区间</button>
-              <button class="btn ghost" data-jump="deposit-review">处理充值申请</button>
-              <button class="btn ghost" data-jump="withdraw-review">处理提现申请</button>
+            <div class="card-head">
+              <h3>文章管理</h3>
+              <span class="hint">支持新增、编辑、发布/草稿、归档。</span>
+            </div>
+
+            <form id="articleForm" class="form-block">
+              <input type="hidden" id="articleEditId" />
+              <div class="field-row">
+                <div class="field">
+                  <label for="articleCategory">分类</label>
+                  <select id="articleCategory" required>
+                    <option value="hedge">量化对冲套利</option>
+                    <option value="system">系统说明</option>
+                    <option value="news">区块链时事新闻</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="articleStatus">状态</label>
+                  <select id="articleStatus" required>
+                    <option value="published">已发布</option>
+                    <option value="draft">草稿</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="articleTitle">标题</label>
+                <input id="articleTitle" type="text" required />
+              </div>
+
+              <div class="field">
+                <label for="articleContent">文章内容</label>
+                <textarea id="articleContent" rows="6" required></textarea>
+              </div>
+
+              <div class="row-actions">
+                <button class="btn primary" id="articleSubmitBtn" type="submit">保存文章</button>
+                <button class="btn ghost" id="articleResetBtn" type="button">清空</button>
+              </div>
+            </form>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>标题</th>
+                    <th>分类</th>
+                    <th>状态</th>
+                    <th>更新时间</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="articleTableBody"></tbody>
+              </table>
             </div>
           </article>
-        </div>
-      </section>
+        </section>
 
-      <section class="section" id="site-config">
-        <article class="card glass">
-          <h3>站点配置</h3>
-          <p class="hint">此处用于维护前台展示内容与收款信息，联调后可直接接数据库配置表。</p>
-          <form id="siteConfigForm">
-            <div class="field-row">
-              <div class="field">
-                <label for="brandSubtitle">品牌副标题</label>
-                <input id="brandSubtitle" type="text" />
-              </div>
-              <div class="field">
-                <label for="homeChip">首页标签</label>
-                <input id="homeChip" type="text" />
-              </div>
+        <section class="section" id="user-manage">
+          <article class="card glass">
+            <div class="card-head">
+              <h3>用户管理</h3>
+              <span class="hint">支持余额手动加减与账号封禁/启用。</span>
             </div>
-            <div class="field">
-              <label for="homeTitle">首页主标题</label>
-              <input id="homeTitle" type="text" />
-            </div>
-            <div class="field">
-              <label for="homeDesc">首页描述</label>
-              <textarea id="homeDesc" rows="3"></textarea>
-            </div>
-            <div class="field-row">
-              <div class="field">
-                <label for="payDigitalAddress">数字收款地址</label>
-                <input id="payDigitalAddress" type="text" />
-              </div>
-              <div class="field">
-                <label for="payBankName">收款开户行</label>
-                <input id="payBankName" type="text" />
-              </div>
-            </div>
-            <div class="field-row">
-              <div class="field">
-                <label for="payBankAccountName">收款户名</label>
-                <input id="payBankAccountName" type="text" />
-              </div>
-              <div class="field">
-                <label for="payBankAccountNo">收款卡号</label>
-                <input id="payBankAccountNo" type="text" />
-              </div>
-            </div>
-            <div class="field">
-              <label for="payBankBranch">收款支行</label>
-              <input id="payBankBranch" type="text" />
-            </div>
-            <div class="field">
-              <label for="agreementText">用户协议内容</label>
-              <textarea id="agreementText" rows="8"></textarea>
-            </div>
-            <button class="btn primary" type="submit">保存站点配置</button>
-          </form>
-        </article>
-      </section>
 
-      <section class="section" id="order-config">
-        <article class="card glass">
-          <h3>订单收益配置</h3>
-          <p class="hint">支持“全局默认区间 + 订单独立区间覆盖”。订单勾选独立区间后优先使用该区间。</p>
-          <div class="field-row">
-            <div class="field">
-              <label for="defaultMinRate">全局默认最小收益率 (%)</label>
-              <input id="defaultMinRate" type="number" min="0" step="0.01" />
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>账号</th>
+                    <th>展示名/联系方式</th>
+                    <th>可用余额</th>
+                    <th>冻结余额</th>
+                    <th>状态</th>
+                    <th>注册时间</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="userTableBody"></tbody>
+              </table>
             </div>
-            <div class="field">
-              <label for="defaultMaxRate">全局默认最大收益率 (%)</label>
-              <input id="defaultMaxRate" type="number" min="0" step="0.01" />
-            </div>
-          </div>
-          <div class="order-config-list" id="orderConfigList"></div>
-          <div class="row-actions">
-            <button class="btn ghost" id="addOrderTemplateBtn" type="button">新增订单模板</button>
-            <button class="btn primary" id="saveOrderConfigBtn" type="button">保存订单配置</button>
-          </div>
-        </article>
-      </section>
+          </article>
+        </section>
 
-      <section class="section" id="deposit-review">
-        <article class="card glass">
-          <h3>充值审核</h3>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>用户</th>
-                  <th>金额</th>
-                  <th>方式</th>
-                  <th>凭证</th>
-                  <th>提交时间</th>
-                  <th>状态</th>
-                  <th>操作</th>
-                </tr>
-              </thead>
-              <tbody id="depositTableBody"></tbody>
-            </table>
-          </div>
-        </article>
-      </section>
-
-      <section class="section" id="withdraw-review">
-        <article class="card glass">
-          <h3>提现审核</h3>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>用户</th>
-                  <th>金额</th>
-                  <th>方式</th>
-                  <th>收款信息</th>
-                  <th>提交时间</th>
-                  <th>状态</th>
-                  <th>操作</th>
-                </tr>
-              </thead>
-              <tbody id="withdrawTableBody"></tbody>
-            </table>
-          </div>
-        </article>
-      </section>
-
-      <section class="section" id="admin-settings">
-        <article class="card glass">
-          <h3>管理员设置</h3>
-          <div class="field-row">
-            <div class="field">
-              <label>当前账号</label>
-              <input id="currentAdmin" type="text" value="admin" readonly />
+        <section class="section" id="order-manage">
+          <article class="card glass">
+            <div class="card-head">
+              <h3>订单模板配置</h3>
+              <span class="hint">删除采用归档，不做物理删除，保证历史订单可追溯。</span>
             </div>
-            <div class="field">
-              <label for="newAdminPassword">新密码</label>
-              <input id="newAdminPassword" type="password" placeholder="至少 8 位" />
+
+            <form id="orderForm" class="form-block">
+              <input type="hidden" id="orderEditId" />
+
+              <div class="field-row">
+                <div class="field">
+                  <label for="orderTitle">标题</label>
+                  <input id="orderTitle" type="text" required />
+                </div>
+                <div class="field">
+                  <label for="orderTag">标签（可选）</label>
+                  <input id="orderTag" type="text" />
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="orderDesc">描述（可选）</label>
+                <input id="orderDesc" type="text" />
+              </div>
+
+              <div class="field-row">
+                <div class="field">
+                  <label for="orderMinAmount">起投金额</label>
+                  <input id="orderMinAmount" type="number" min="1" step="0.01" required />
+                </div>
+                <div class="field">
+                  <label for="orderStatus">展示状态</label>
+                  <select id="orderStatus" required>
+                    <option value="on_shelf">上架</option>
+                    <option value="off_shelf">下架</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="field-row">
+                <div class="field">
+                  <label for="orderFreezeMin">冻结时间最小值（小时）</label>
+                  <input id="orderFreezeMin" type="number" min="1" step="1" required />
+                </div>
+                <div class="field">
+                  <label for="orderFreezeMax">冻结时间最大值（小时）</label>
+                  <input id="orderFreezeMax" type="number" min="1" step="1" required />
+                </div>
+              </div>
+
+              <div class="field-row">
+                <div class="field">
+                  <label for="orderRateMin">盈利比例最小值（%）</label>
+                  <input id="orderRateMin" type="number" min="0" step="0.01" required />
+                </div>
+                <div class="field">
+                  <label for="orderRateMax">盈利比例最大值（%）</label>
+                  <input id="orderRateMax" type="number" min="0" step="0.01" required />
+                </div>
+              </div>
+
+              <div class="row-actions">
+                <button class="btn primary" id="orderSubmitBtn" type="submit">保存订单模板</button>
+                <button class="btn ghost" id="orderResetBtn" type="button">清空</button>
+              </div>
+            </form>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>模板编码</th>
+                    <th>标题</th>
+                    <th>起投</th>
+                    <th>冻结时间</th>
+                    <th>盈利比例</th>
+                    <th>状态</th>
+                    <th>更新时间</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="orderTableBody"></tbody>
+              </table>
             </div>
-          </div>
-          <button class="btn primary" id="saveAdminBtn" type="button">更新管理员密码</button>
-        </article>
-      </section>
-    </main>
+          </article>
+        </section>
+
+        <section class="section" id="deposit-manage">
+          <article class="card glass">
+            <div class="card-head">
+              <h3>充值管理</h3>
+              <span class="hint">通过后自动增加用户可用余额，驳回需填写原因。</span>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>用户</th>
+                    <th>金额</th>
+                    <th>方式</th>
+                    <th>转账截图</th>
+                    <th>提交时间</th>
+                    <th>状态</th>
+                    <th>原因</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="depositTableBody"></tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+
+        <section class="section" id="withdraw-manage">
+          <article class="card glass">
+            <div class="card-head">
+              <h3>提现管理</h3>
+              <span class="hint">通过后自动扣减用户可用余额，驳回需填写原因。</span>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>用户</th>
+                    <th>金额</th>
+                    <th>方式</th>
+                    <th>收款信息</th>
+                    <th>提交时间</th>
+                    <th>状态</th>
+                    <th>原因</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="withdrawTableBody"></tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+
+        <section class="section" id="agreement-manage">
+          <article class="card glass">
+            <h3>协议管理</h3>
+            <form id="agreementForm">
+              <div class="field">
+                <label for="agreementText">用户协议内容</label>
+                <textarea id="agreementText" rows="14" required></textarea>
+              </div>
+              <button class="btn primary" type="submit">保存协议</button>
+            </form>
+          </article>
+        </section>
+
+        <section class="section" id="admin-settings">
+          <article class="card glass">
+            <h3>管理员设置</h3>
+            <form id="adminPasswordForm">
+              <div class="field-row">
+                <div class="field">
+                  <label for="currentAdmin">当前账号</label>
+                  <input id="currentAdmin" type="text" value="admin" readonly />
+                </div>
+                <div class="field">
+                  <label for="newAdminPassword">新密码</label>
+                  <input id="newAdminPassword" type="password" minlength="8" required />
+                </div>
+              </div>
+              <div class="field">
+                <label for="confirmAdminPassword">确认新密码</label>
+                <input id="confirmAdminPassword" type="password" minlength="8" required />
+              </div>
+              <button class="btn primary" type="submit">更新管理员密码</button>
+            </form>
+          </article>
+        </section>
+      </main>
+    </section>
   </div>
 
   <div class="toast" id="toast"></div>
