@@ -473,6 +473,49 @@
     </div>
   </div>
 
+  <div class="modal-backdrop" id="balanceAdjustModalBackdrop">
+    <div class="modal glass admin-input-modal">
+      <div class="card-head">
+        <h3 id="balanceAdjustTitle">调整用户余额</h3>
+        <button class="icon-btn" id="closeBalanceAdjustModal" aria-label="关闭">×</button>
+      </div>
+      <p class="hint" id="balanceAdjustHint">请输入本次调整金额。</p>
+      <form id="balanceAdjustForm" class="form-block">
+        <input type="hidden" id="balanceUserId" />
+        <input type="hidden" id="balanceDirection" />
+        <div class="field">
+          <label for="balanceAmountInput">金额</label>
+          <input id="balanceAmountInput" type="number" min="0.01" step="0.01" required />
+        </div>
+        <div class="row-actions">
+          <button class="btn primary" type="submit" id="balanceAdjustSubmitBtn">确认</button>
+          <button class="btn ghost" type="button" id="cancelBalanceAdjustBtn">取消</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="auditRejectModalBackdrop">
+    <div class="modal glass admin-input-modal">
+      <div class="card-head">
+        <h3 id="auditRejectTitle">填写驳回原因</h3>
+        <button class="icon-btn" id="closeAuditRejectModal" aria-label="关闭">×</button>
+      </div>
+      <p class="hint" id="auditRejectHint">驳回时必须填写原因，前台会展示给用户。</p>
+      <form id="auditRejectForm" class="form-block">
+        <input type="hidden" id="auditRejectType" />
+        <input type="hidden" id="auditRejectRecordId" />
+        <div class="field">
+          <label for="auditRejectReason">驳回原因</label>
+          <textarea id="auditRejectReason" rows="4" required></textarea>
+        </div>
+        <div class="row-actions">
+          <button class="btn danger" type="submit" id="auditRejectSubmitBtn">确认驳回</button>
+          <button class="btn ghost" type="button" id="cancelAuditRejectBtn">取消</button>
+        </div>
+      </form>
+    </div>
+  </div>
   <div class="toast" id="toast"></div>
   <script src="/admin/app.js"></script>
 </body>

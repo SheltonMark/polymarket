@@ -478,6 +478,106 @@ function closeModal(modalId) {
   q(`#${modalId}`)?.classList.remove("open");
 }
 
+function openBalanceAdjustModal({ userId, direction, account }) {
+  const isAdd = direction === "add";
+  q("#balanceUserId").value = userId;
+  q("#balanceDirection").value = direction;
+  q("#balanceAdjustTitle").textContent = isAdd ? "增加用户余额" : "减少用户余额";
+  q("#balanceAdjustHint").textContent = `目标用户：${account}，请输入本次${isAdd ? "增加" : "减少"}金额。`;
+  q("#balanceAdjustSubmitBtn").textContent = isAdd ? "确认增加" : "确认减少";
+  q("#balanceAmountInput").value = "100";
+  openModal("balanceAdjustModalBackdrop");
+  q("#balanceAmountInput").focus();
+}
+
+function closeBalanceAdjustModal() {
+  q("#balanceAdjustForm").reset();
+  closeModal("balanceAdjustModalBackdrop");
+}
+
+function openRejectReasonModal({ type, recordId }) {
+  const isDeposit = type === "deposit";
+  q("#auditRejectType").value = type;
+  q("#auditRejectRecordId").value = recordId;
+  q("#auditRejectTitle").textContent = isDeposit ? "驳回充值申请" : "驳回提现申请";
+  q("#auditRejectHint").textContent = `记录编号：${recordId}，驳回原因会展示给用户。`;
+  q("#auditRejectReason").value = "";
+  openModal("auditRejectModalBackdrop");
+  q("#auditRejectReason").focus();
+}
+
+function closeRejectReasonModal() {
+  q("#auditRejectForm").reset();
+  closeModal("auditRejectModalBackdrop");
+}
+
+function bindActionInputModals() {
+  q("#closeBalanceAdjustModal").addEventListener("click", closeBalanceAdjustModal);
+  q("#cancelBalanceAdjustBtn").addEventListener("click", closeBalanceAdjustModal);
+  q("#balanceAdjustModalBackdrop").addEventListener("click", (event) => {
+    if (event.target.id === "balanceAdjustModalBackdrop") closeBalanceAdjustModal();
+  });
+
+  q("#balanceAdjustForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const userId = q("#balanceUserId").value;
+    const direction = q("#balanceDirection").value;
+    const amount = Number(q("#balanceAmountInput").value || 0);
+
+    if (!userId || !["add", "sub"].includes(direction)) {
+      showToast("参数异常，请重试", true);
+      return;
+    }
+    if (!Number.isFinite(amount) || amount <= 0) {
+      showToast("请输入有效金额", true);
+      return;
+    }
+
+    try {
+      await apiRequest(`/api/admin/users/${userId}/balance`, {
+        method: "POST",
+        body: { direction, amount },
+      });
+      await loadAdminData();
+      closeBalanceAdjustModal();
+      showToast("用户余额已调整");
+    } catch (error) {
+      showToast(error.message, true);
+    }
+  });
+
+  q("#closeAuditRejectModal").addEventListener("click", closeRejectReasonModal);
+  q("#cancelAuditRejectBtn").addEventListener("click", closeRejectReasonModal);
+  q("#auditRejectModalBackdrop").addEventListener("click", (event) => {
+    if (event.target.id === "auditRejectModalBackdrop") closeRejectReasonModal();
+  });
+
+  q("#auditRejectForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const type = q("#auditRejectType").value;
+    const recordId = q("#auditRejectRecordId").value;
+    const reason = q("#auditRejectReason").value.trim();
+
+    if (!reason) {
+      showToast("驳回时必须填写原因", true);
+      return;
+    }
+
+    const apiPath = type === "deposit"
+      ? `/api/admin/deposits/${recordId}/reject`
+      : `/api/admin/withdrawals/${recordId}/reject`;
+
+    try {
+      await apiRequest(apiPath, { method: "POST", body: { reason } });
+      await loadAdminData();
+      closeRejectReasonModal();
+      showToast(type === "deposit" ? "充值审核已更新" : "提现审核已更新");
+    } catch (error) {
+      showToast(error.message, true);
+    }
+  });
+}
+
 function bindSectionSwitch() {
   qq(".menu-btn[data-section]").forEach((button) => {
     button.addEventListener("click", () => sectionSwitch(button.dataset.section));
@@ -641,21 +741,14 @@ function bindUserManage() {
         await loadAdminData();
         showToast("账号状态已更新");
         return;
+      }      if (action === "add" || action === "sub") {
+        const user = state.users.find((item) => item.id === userId);
+        openBalanceAdjustModal({
+          userId,
+          direction: action,
+          account: user?.account || "未知用户",
+        });
       }
-
-      const raw = window.prompt(action === "add" ? "请输入增加金额" : "请输入减少金额", "100");
-      if (raw === null) return;
-      const amount = Number(raw);
-      if (!Number.isFinite(amount) || amount <= 0) {
-        showToast("请输入有效金额", true);
-        return;
-      }
-      await apiRequest(`/api/admin/users/${userId}/balance`, {
-        method: "POST",
-        body: { direction: action === "sub" ? "sub" : "add", amount },
-      });
-      await loadAdminData();
-      showToast("用户余额已调整");
     } catch (error) {
       showToast(error.message, true);
     }
@@ -725,17 +818,11 @@ function bindAuditManage() {
     try {
       if (action === "approve") {
         await apiRequest(`/api/admin/deposits/${id}/approve`, { method: "POST" });
-      } else {
-        const reason = window.prompt("请输入驳回原因", "");
-        if (reason === null) return;
-        if (!reason.trim()) {
-          showToast("驳回时必须填写原因", true);
-          return;
-        }
-        await apiRequest(`/api/admin/deposits/${id}/reject`, { method: "POST", body: { reason: reason.trim() } });
+        await loadAdminData();
+        showToast("充值审核已更新");
+        return;
       }
-      await loadAdminData();
-      showToast("充值审核已更新");
+      openRejectReasonModal({ type: "deposit", recordId: id });
     } catch (error) {
       showToast(error.message, true);
     }
@@ -750,17 +837,11 @@ function bindAuditManage() {
     try {
       if (action === "approve") {
         await apiRequest(`/api/admin/withdrawals/${id}/approve`, { method: "POST" });
-      } else {
-        const reason = window.prompt("请输入驳回原因", "");
-        if (reason === null) return;
-        if (!reason.trim()) {
-          showToast("驳回时必须填写原因", true);
-          return;
-        }
-        await apiRequest(`/api/admin/withdrawals/${id}/reject`, { method: "POST", body: { reason: reason.trim() } });
+        await loadAdminData();
+        showToast("提现审核已更新");
+        return;
       }
-      await loadAdminData();
-      showToast("提现审核已更新");
+      openRejectReasonModal({ type: "withdraw", recordId: id });
     } catch (error) {
       showToast(error.message, true);
     }
@@ -808,6 +889,7 @@ function bindEventsOnce() {
   bindCustomSelect("articleStatusSelect", "articleStatus");
   bindCustomSelect("orderStatusSelect", "orderStatus");
   bindHomeManage();
+  bindActionInputModals();
   bindUserManage();
   bindOrderManage();
   bindAuditManage();

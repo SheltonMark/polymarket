@@ -433,7 +433,7 @@ app.get("/api/me/summary", requireUser, async (req, res) => {
 
 app.get("/api/orders/templates", async (_req, res) => {
   const rows = await db.all(
-    `SELECT id, title, description,
+    `SELECT id, title, tag, description,
             min_amount AS minAmount,
             freeze_min AS freezeMin,
             freeze_max AS freezeMax,
@@ -450,6 +450,7 @@ app.get("/api/orders/templates", async (_req, res) => {
       id: item.id,
       name: item.title,
       subtitle: item.description || "",
+      tag: item.tag || "",
       minAmount: round2(item.minAmount),
       freezeMin: Number(item.freezeMin),
       freezeMax: Number(item.freezeMax),
@@ -550,9 +551,7 @@ app.post("/api/orders", requireUser, async (req, res) => {
   res.json({ message: "订单已提交", summary: await getUserSummary(user.id) });
 });
 
-app.post("/api/orders/settle", requireUser, async (req, res) => {
-  const force = Boolean(req.body.force);
-  const user = await getUserById(req.user.userId);
+app.post("/api/orders/settle", requireUser, async (req, res) => {  const user = await getUserById(req.user.userId);
   if (!user) {
     res.status(404).json({ message: "用户不存在" });
     return;
@@ -565,7 +564,7 @@ app.post("/api/orders/settle", requireUser, async (req, res) => {
 
   const now = Date.now();
   const nowText = getNowString();
-  const toSettle = running.filter((item) => force || new Date(item.settle_at).getTime() <= now);
+  const toSettle = running.filter((item) => new Date(item.settle_at).getTime() <= now);
 
   if (!toSettle.length) {
     res.json({ settledCount: 0, summary: await getUserSummary(user.id) });

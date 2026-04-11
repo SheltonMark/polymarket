@@ -140,6 +140,17 @@ function formatDateText(text) {
   return date.toLocaleDateString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" });
 }
 
+function recordStatusText(status) {
+  const map = {
+    pending: "待审核",
+    approved: "已通过",
+    rejected: "已驳回",
+    running: "进行中",
+    done: "已完成",
+  };
+  return map[String(status || "")] || String(status || "未知");
+}
+
 function updateSegmentIndicator(container, selector, indicator) {
   if (!container || !indicator) return;
   const active = container.querySelector(selector);
@@ -390,6 +401,12 @@ async function loadSiteConfig() {
   }
 }
 
+function toTimestamp(value, fallback = Date.now()) {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  const parsed = new Date(value).getTime();
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
 function buildChartSeriesFromOrders() {
   const now = Date.now();
   const base = Math.max(0, walletTotal() - state.wallet.totalProfit);
@@ -397,12 +414,13 @@ function buildChartSeriesFromOrders() {
 
   const doneOrders = [...state.orderHistory]
     .filter((item) => item.status === "done")
-    .sort((a, b) => a.settleAt - b.settleAt);
+    .map((item) => ({ ...item, settleTs: toTimestamp(item.settleAt, now) }))
+    .sort((a, b) => a.settleTs - b.settleTs);
 
   let runningValue = base;
   doneOrders.forEach((order) => {
     runningValue += Number(order.profit || 0);
-    points.push({ ts: order.settleAt, value: Number(runningValue.toFixed(2)) });
+    points.push({ ts: order.settleTs, value: Number(runningValue.toFixed(2)) });
   });
 
   points.push({ ts: now, value: walletTotal() });
@@ -418,6 +436,28 @@ function downSample(data, maxPoints) {
     sampled.push(data[idx]);
   }
   return sampled;
+}
+
+function getDoneOrdersByRange(range) {
+  const now = Date.now();
+  const durations = {
+    day: 24 * 60 * 60 * 1000,
+    week: 7 * 24 * 60 * 60 * 1000,
+    month: 30 * 24 * 60 * 60 * 1000,
+    all: null,
+  };
+
+  let orders = [...state.orderHistory]
+    .filter((item) => item.status === "done")
+    .map((item) => ({ ...item, settleTs: toTimestamp(item.settleAt, 0) }))
+    .filter((item) => item.settleTs > 0);
+
+  if (durations[range]) {
+    const fromTs = now - durations[range];
+    orders = orders.filter((item) => item.settleTs >= fromTs);
+  }
+
+  return orders.sort((a, b) => a.settleTs - b.settleTs);
 }
 
 function getSeriesByRange(range) {
@@ -444,6 +484,24 @@ function getSeriesByRange(range) {
   return downSample(data, maxByRange[range] || 64);
 }
 
+function updateTopAuthButton() {
+  const authBtn = q("#authBtn");
+  if (!authBtn) return;
+
+  if (state.user.loggedIn) {
+    authBtn.classList.add("profile-icon-btn");
+    authBtn.textContent = "";
+    authBtn.setAttribute("aria-label", "进入个人中心");
+    authBtn.setAttribute("title", "个人中心");
+    return;
+  }
+
+  authBtn.classList.remove("profile-icon-btn");
+  authBtn.textContent = "注册 / 登录";
+  authBtn.setAttribute("aria-label", "注册或登录");
+  authBtn.setAttribute("title", "注册 / 登录");
+}
+
 function updateWalletView() {
   q("#metricTotal").textContent = money(walletTotal());
   q("#metricAvailable").textContent = money(state.wallet.available);
@@ -452,20 +510,22 @@ function updateWalletView() {
   q("#profileTotal").textContent = money(walletTotal());
   q("#displayUsername").textContent = state.user.username || "游客";
   q("#profileStatus").textContent = state.user.loggedIn ? "已登录" : "未登录";
+  updateTopAuthButton();
 }
 
 function updateRangeStats(series) {
   const first = series[0].value;
   const last = series[series.length - 1].value;
-  const high = Math.max(...series.map((p) => p.value));
-  const low = Math.min(...series.map((p) => p.value));
   const profit = last - first;
+
+  const doneOrders = getDoneOrdersByRange(state.activeRange);
+  const latestSettle = doneOrders.length ? doneOrders[doneOrders.length - 1].settleTs : 0;
 
   const rangeProfitEl = q("#rangeProfit");
   rangeProfitEl.textContent = `${profit >= 0 ? "+" : ""}${money(profit)}`;
   rangeProfitEl.style.color = profit >= 0 ? "#1f9d55" : "#d83a3a";
-  q("#rangeHigh").textContent = money(high);
-  q("#rangeLow").textContent = money(low);
+  q("#rangeHigh").textContent = String(doneOrders.length);
+  q("#rangeLow").textContent = latestSettle ? formatDateText(latestSettle) : "--";
 }
 
 function drawPnlChart() {
@@ -512,7 +572,13 @@ function drawPnlChart() {
 
   ctx.beginPath();
   ctx.moveTo(toX(0), toY(data[0].value));
-  for (let i = 1; i < data.length; i += 1) ctx.lineTo(toX(i), toY(data[i].value));
+  for (let i = 1; i < data.length; i += 1) {
+    const x = toX(i);
+    const prevY = toY(data[i - 1].value);
+    const currentY = toY(data[i].value);
+    ctx.lineTo(x, prevY);
+    ctx.lineTo(x, currentY);
+  }
   ctx.lineWidth = 2.6;
   ctx.strokeStyle = "#2fbf9f";
   ctx.stroke();
@@ -546,7 +612,7 @@ function renderProductCard(product, compact = false) {
       <p>${product.subtitle || ""}</p>
       <div class="meta-row">
         <span class="meta-pill">起投 ${money(product.minAmount)}</span>
-        <span class="meta-pill">支持快速入场</span>
+        <span class="meta-pill">${safeString(product.tag, "支持快速入场")}</span>
       </div>
       <div style="margin-top:10px;"><button class="btn primary sm" data-invest-id="${product.id}">立即下单</button></div>
     `;
@@ -560,7 +626,7 @@ function renderProductCard(product, compact = false) {
     <p>${product.subtitle || ""}</p>
     <div class="meta-row">
       <span class="meta-pill">起投 ${money(product.minAmount)}</span>
-      <span class="meta-pill">优先撮合</span>
+      <span class="meta-pill">${safeString(product.tag, "优先撮合")}</span>
     </div>
     <div style="margin-top:10px;"><button class="btn primary sm" data-invest-id="${product.id}">立即下单</button></div>
   `;
@@ -644,13 +710,13 @@ function renderRecords() {
   if (state.recordType === "deposit") {
     records = state.depositRecords.map((record) => ({
       title: `充值申请 ${money(record.amount)}`,
-      desc: `方式：${record.method} ｜ 状态：${record.status}${record.reason ? ` ｜ 原因：${record.reason}` : ""}`,
+      desc: `方式：${record.method} ｜ 状态：${recordStatusText(record.status)}${record.reason ? ` ｜ 原因：${record.reason}` : ""}`,
       time: record.time,
     }));
   } else if (state.recordType === "withdraw") {
     records = state.withdrawRecords.map((record) => ({
       title: `提现申请 ${money(record.amount)}`,
-      desc: `方式：${record.method} ｜ 状态：${record.status}${record.reason ? ` ｜ 原因：${record.reason}` : ""}`,
+      desc: `方式：${record.method} ｜ 状态：${recordStatusText(record.status)}${record.reason ? ` ｜ 原因：${record.reason}` : ""}`,
       time: record.time,
     }));
   } else {
@@ -770,12 +836,11 @@ async function submitOrder() {
   }
 }
 
-async function settleDueOrders(force = false) {
+async function settleDueOrders() {
   if (!state.user.loggedIn) return;
   try {
     const payload = await apiRequest("/api/orders/settle", {
       method: "POST",
-      body: { force },
     });
     applySummary(payload.summary);
     if (payload.settledCount > 0) showToast(`已更新 ${payload.settledCount} 条订单状态`);
@@ -843,7 +908,14 @@ function initAuth() {
   q("#agreementContent").textContent = state.agreementText || defaultSiteConfig.agreementText;
   initAuthChannelSelect();
 
-  q("#authBtn").addEventListener("click", () => q("#authModalBackdrop").classList.add("open"));
+  q("#authBtn").addEventListener("click", () => {
+    if (state.user.loggedIn) {
+      switchSection("profile");
+      refreshAllSegmentIndicators();
+      return;
+    }
+    q("#authModalBackdrop").classList.add("open");
+  });
   q("#closeAuthModal").addEventListener("click", () => q("#authModalBackdrop").classList.remove("open"));
   q("#authModalBackdrop").addEventListener("click", (event) => {
     if (event.target.id === "authModalBackdrop") q("#authModalBackdrop").classList.remove("open");
@@ -1055,8 +1127,8 @@ function initTimeFilter() {
 }
 
 function initSettleControls() {
-  q("#settleNowBtn").addEventListener("click", () => settleDueOrders(true));
-  setInterval(() => settleDueOrders(false), 15000);
+  q("#settleNowBtn").addEventListener("click", () => settleDueOrders());
+  setInterval(() => settleDueOrders(), 15000);
 }
 
 async function bootstrapUserSession() {

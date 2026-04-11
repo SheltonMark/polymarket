@@ -753,3 +753,17 @@ tbody tr:hover {
 .icon-btn:hover {
   background: rgba(255, 255, 255, 0.84);
 }
+
+.admin-input-modal {
+  width: min(460px, 92vw);
+  max-height: min(82vh, 640px);
+}
+
+.admin-input-modal .hint {
+  margin: 4px 0 12px;
+}
+
+#auditRejectReason {
+  resize: vertical;
+  min-height: 96px;
+}
