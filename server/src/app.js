@@ -182,7 +182,9 @@ async function getUserSummary(userId) {
   const user = await db.get(
     `SELECT id, username, profile, status,
             available_balance AS available,
+            principal_available AS principalAvailable,
             frozen_balance AS frozen,
+            profit_available AS profitAvailable,
             total_profit AS totalProfit,
             created_at AS createdAt
      FROM users WHERE id = ?`,
@@ -235,7 +237,10 @@ async function getUserSummary(userId) {
     },
     wallet: {
       available: round2(user.available),
+      withdrawable: round2(user.available),
+      principalAvailable: round2(user.principalAvailable),
       frozen: round2(user.frozen),
+      profitAvailable: round2(user.profitAvailable),
       totalProfit: round2(user.totalProfit),
     },
     orderHistory: orderHistory.map((item) => ({
@@ -392,8 +397,8 @@ app.post("/api/auth/register", async (req, res) => {
   await db.run(
     `INSERT INTO users (
       id, username, password_hash, profile, channel, status,
-      available_balance, frozen_balance, total_profit, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, 'enabled', 0, 0, 0, ?, ?)`,
+      available_balance, principal_available, frozen_balance, profit_available, total_profit, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, 'enabled', 0, 0, 0, 0, 0, ?, ?)`,
     [userId, username, hash, username, channel, now, now]
   );
 
@@ -490,8 +495,8 @@ app.post("/api/orders", requireUser, async (req, res) => {
     res.status(400).json({ message: `当前项目最低金额 $${round2(template.min_amount)}` });
     return;
   }
-  if (amount > Number(user.available_balance)) {
-    res.status(400).json({ message: "可用余额不足" });
+  if (amount > Number(user.principal_available)) {
+    res.status(400).json({ message: "可下单本金不足" });
     return;
   }
 
@@ -535,10 +540,11 @@ app.post("/api/orders", requireUser, async (req, res) => {
     await db.run(
       `UPDATE users
        SET available_balance = available_balance - ?,
+           principal_available = principal_available - ?,
            frozen_balance = frozen_balance + ?,
            updated_at = ?
        WHERE id = ?`,
-      [amount, amount, nowText, user.id]
+      [amount, amount, amount, nowText, user.id]
     );
 
     await db.exec("COMMIT");
@@ -551,7 +557,8 @@ app.post("/api/orders", requireUser, async (req, res) => {
   res.json({ message: "订单已提交", summary: await getUserSummary(user.id) });
 });
 
-app.post("/api/orders/settle", requireUser, async (req, res) => {  const user = await getUserById(req.user.userId);
+app.post("/api/orders/settle", requireUser, async (req, res) => {
+  const user = await getUserById(req.user.userId);
   if (!user) {
     res.status(404).json({ message: "用户不存在" });
     return;
@@ -587,11 +594,21 @@ app.post("/api/orders/settle", requireUser, async (req, res) => {  const user = 
     await db.run(
       `UPDATE users
        SET available_balance = available_balance + ?,
+           principal_available = principal_available + ?,
            frozen_balance = frozen_balance - ?,
+           profit_available = profit_available + ?,
            total_profit = total_profit + ?,
            updated_at = ?
        WHERE id = ?`,
-      [round2(released + profitSum), round2(released), round2(profitSum), nowText, user.id]
+      [
+        round2(released + profitSum),
+        round2(released),
+        round2(released),
+        round2(profitSum),
+        round2(profitSum),
+        nowText,
+        user.id,
+      ]
     );
 
     await db.exec("COMMIT");
@@ -827,19 +844,19 @@ app.post("/api/admin/users/:id/balance", requireAdmin, async (req, res) => {
     return;
   }
 
-  const user = await db.get("SELECT id, username, available_balance FROM users WHERE id = ?", [userId]);
+  const user = await db.get("SELECT id, username, available_balance, principal_available FROM users WHERE id = ?", [userId]);
   if (!user) {
     res.status(404).json({ message: "用户不存在" });
     return;
   }
 
-  if (direction === "sub" && Number(user.available_balance) < amount) {
-    res.status(400).json({ message: "可用余额不足，无法扣减" });
+  if (direction === "sub" && Number(user.principal_available) < amount) {
+    res.status(400).json({ message: "可下单本金不足，无法扣减" });
     return;
   }
 
   const delta = direction === "sub" ? -amount : amount;
-  await db.run("UPDATE users SET available_balance = available_balance + ?, updated_at = ? WHERE id = ?", [delta, getNowString(), user.id]);
+  await db.run("UPDATE users SET available_balance = available_balance + ?, principal_available = principal_available + ?, updated_at = ? WHERE id = ?", [delta, delta, getNowString(), user.id]);
   await addActivity(`管理员手动${direction === "sub" ? "减少" : "增加"}用户 ${user.username} 充值本金 $${amount.toFixed(2)}。`);
   res.json({ ok: true });
 });
@@ -993,7 +1010,7 @@ app.post("/api/admin/deposits/:id/approve", requireAdmin, async (req, res) => {
   await db.exec("BEGIN TRANSACTION");
   try {
     await db.run("UPDATE deposits SET status = 'approved', reason = '', processed_at = ? WHERE id = ?", [now, recordId]);
-    await db.run("UPDATE users SET available_balance = available_balance + ?, updated_at = ? WHERE id = ?", [round2(row.amount), now, user.id]);
+    await db.run("UPDATE users SET available_balance = available_balance + ?, principal_available = principal_available + ?, updated_at = ? WHERE id = ?", [round2(row.amount), round2(row.amount), now, user.id]);
     await db.exec("COMMIT");
   } catch (error) {
     await db.exec("ROLLBACK");
@@ -1035,7 +1052,7 @@ app.post("/api/admin/withdrawals/:id/approve", requireAdmin, async (req, res) =>
     return;
   }
 
-  const user = await db.get("SELECT id, username, available_balance FROM users WHERE id = ?", [row.user_id]);
+  const user = await db.get("SELECT id, username, available_balance, principal_available, profit_available FROM users WHERE id = ?", [row.user_id]);
   if (!user) {
     res.status(404).json({ message: "未找到对应用户" });
     return;
@@ -1046,12 +1063,21 @@ app.post("/api/admin/withdrawals/:id/approve", requireAdmin, async (req, res) =>
     res.status(400).json({ message: "用户可用余额不足，无法通过" });
     return;
   }
+  const profitPart = Math.min(Number(user.profit_available) || 0, amount);
+  const principalPart = round2(amount - profitPart);
+  if (Number(user.principal_available) < principalPart) {
+    res.status(400).json({ message: "用户本金余额不足，无法通过" });
+    return;
+  }
 
   const now = getNowString();
   await db.exec("BEGIN TRANSACTION");
   try {
     await db.run("UPDATE withdrawals SET status = 'approved', reason = '', processed_at = ? WHERE id = ?", [now, recordId]);
-    await db.run("UPDATE users SET available_balance = available_balance - ?, updated_at = ? WHERE id = ?", [amount, now, user.id]);
+    await db.run(
+      "UPDATE users SET available_balance = available_balance - ?, principal_available = principal_available - ?, profit_available = profit_available - ?, updated_at = ? WHERE id = ?",
+      [amount, principalPart, round2(profitPart), now, user.id]
+    );
     await db.exec("COMMIT");
   } catch (error) {
     await db.exec("ROLLBACK");

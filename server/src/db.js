@@ -107,8 +107,8 @@ async function seedInitialData(db) {
     await db.run(
       `INSERT INTO users (
         id, username, password_hash, profile, channel, status,
-        available_balance, frozen_balance, total_profit, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        available_balance, principal_available, frozen_balance, profit_available, total_profit, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         user.id,
         user.username,
@@ -117,7 +117,9 @@ async function seedInitialData(db) {
         user.channel,
         user.status,
         user.available,
+        Number((user.available - Math.min(user.totalProfit, user.available)).toFixed(2)),
         user.frozen,
+        Number(Math.min(user.totalProfit, user.available).toFixed(2)),
         user.totalProfit,
         user.createdAt,
         now,
@@ -432,7 +434,9 @@ export async function initDb() {
       channel TEXT NOT NULL,
       status TEXT NOT NULL DEFAULT 'enabled',
       available_balance REAL NOT NULL DEFAULT 0,
+      principal_available REAL NOT NULL DEFAULT 0,
       frozen_balance REAL NOT NULL DEFAULT 0,
+      profit_available REAL NOT NULL DEFAULT 0,
       total_profit REAL NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
@@ -537,6 +541,40 @@ export async function initDb() {
     );
   `);
 
+  const userColumns = await db.all("PRAGMA table_info(users)");
+  const hasPrincipalAvailable = userColumns.some((column) => column.name === "principal_available");
+  const hasProfitAvailable = userColumns.some((column) => column.name === "profit_available");
+
+  if (!hasPrincipalAvailable) {
+    await db.exec("ALTER TABLE users ADD COLUMN principal_available REAL NOT NULL DEFAULT 0");
+  }
+
+  if (!hasProfitAvailable) {
+    await db.exec("ALTER TABLE users ADD COLUMN profit_available REAL NOT NULL DEFAULT 0");
+  }
+
+  if (!hasPrincipalAvailable || !hasProfitAvailable) {
+    await db.exec(`
+      UPDATE users
+      SET profit_available = ROUND(
+            CASE
+              WHEN available_balance <= 0 THEN 0
+              WHEN total_profit <= 0 THEN 0
+              WHEN total_profit >= available_balance THEN available_balance
+              ELSE total_profit
+            END, 2
+          ),
+          principal_available = ROUND(
+            available_balance - CASE
+              WHEN available_balance <= 0 THEN 0
+              WHEN total_profit <= 0 THEN 0
+              WHEN total_profit >= available_balance THEN available_balance
+              ELSE total_profit
+            END, 2
+          )
+    `);
+  }
+
   const adminCountRow = await db.get(`SELECT COUNT(1) AS count FROM admins`);
   if (!adminCountRow || Number(adminCountRow.count) === 0) {
     await seedInitialData(db);
@@ -544,5 +582,3 @@ export async function initDb() {
 
   return db;
 }
-
-

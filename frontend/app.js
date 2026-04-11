@@ -11,7 +11,9 @@ const state = {
   },
   wallet: {
     available: 0,
+    principalAvailable: 0,
     frozen: 0,
+    profitAvailable: 0,
     totalProfit: 0,
   },
   chartSeries: [],
@@ -781,7 +783,9 @@ function applySummary(summary) {
   state.user.loggedIn = true;
 
   state.wallet.available = Number(summary.wallet.available || 0);
+  state.wallet.principalAvailable = Number((summary.wallet.principalAvailable ?? summary.wallet.available) || 0);
   state.wallet.frozen = Number(summary.wallet.frozen || 0);
+  state.wallet.profitAvailable = Number((summary.wallet.profitAvailable ?? summary.wallet.totalProfit) || 0);
   state.wallet.totalProfit = Number(summary.wallet.totalProfit || 0);
 
   state.orderHistory = safeArray(summary.orderHistory, []);
@@ -820,6 +824,10 @@ async function submitOrder() {
   }
   if (amount < Number(product.minAmount || 0)) {
     showToast(`当前项目最低金额 ${money(product.minAmount)}`, true);
+    return;
+  }
+  if (amount > Number(state.wallet.principalAvailable || 0)) {
+    showToast("下单金额超出可下单本金", true);
     return;
   }
 
@@ -1095,7 +1103,7 @@ function initOrderModal() {
   qq("[data-portion]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const portion = Number(btn.dataset.portion);
-      q("#orderAmount").value = Number(state.wallet.available * portion).toFixed(2);
+      q("#orderAmount").value = Number((state.wallet.principalAvailable || 0) * portion).toFixed(2);
     });
   });
 }
