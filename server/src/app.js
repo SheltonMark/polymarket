@@ -840,7 +840,7 @@ app.post("/api/admin/users/:id/balance", requireAdmin, async (req, res) => {
 
   const delta = direction === "sub" ? -amount : amount;
   await db.run("UPDATE users SET available_balance = available_balance + ?, updated_at = ? WHERE id = ?", [delta, getNowString(), user.id]);
-  await addActivity(`管理员手动${direction === "sub" ? "减少" : "增加"}用户 ${user.username} 余额 $${amount.toFixed(2)}。`);
+  await addActivity(`管理员手动${direction === "sub" ? "减少" : "增加"}用户 ${user.username} 充值本金 $${amount.toFixed(2)}。`);
   res.json({ ok: true });
 });
 

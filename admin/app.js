@@ -180,7 +180,6 @@ function renderArticleTable() {
           <td>
             <div class="cell-actions">
               <button class="btn ghost sm" data-article-action="edit" data-id="${item.id}">编辑</button>
-              <button class="btn ghost sm" data-article-action="toggle" data-id="${item.id}" ${isArchived ? "disabled" : ""}>切换状态</button>
               <button class="btn danger sm" data-article-action="archive" data-id="${item.id}" ${isArchived ? "disabled" : ""}>归档</button>
             </div>
           </td>
@@ -256,7 +255,6 @@ function renderOrderTable() {
         <td>
           <div class="cell-actions">
             <button class="btn ghost sm" data-order-action="edit" data-id="${order.id}" ${order.archived ? "disabled" : ""}>编辑</button>
-            <button class="btn ghost sm" data-order-action="toggle" data-id="${order.id}" ${order.archived ? "disabled" : ""}>上下架</button>
             <button class="btn danger sm" data-order-action="archive" data-id="${order.id}" ${order.archived ? "disabled" : ""}>归档</button>
           </div>
         </td>
@@ -482,9 +480,9 @@ function openBalanceAdjustModal({ userId, direction, account }) {
   const isAdd = direction === "add";
   q("#balanceUserId").value = userId;
   q("#balanceDirection").value = direction;
-  q("#balanceAdjustTitle").textContent = isAdd ? "增加用户余额" : "减少用户余额";
-  q("#balanceAdjustHint").textContent = `目标用户：${account}，请输入本次${isAdd ? "增加" : "减少"}金额。`;
-  q("#balanceAdjustSubmitBtn").textContent = isAdd ? "确认增加" : "确认减少";
+  q("#balanceAdjustTitle").textContent = isAdd ? "增加充值本金" : "减少充值本金";
+  q("#balanceAdjustHint").textContent = `目标用户：${account}，请输入本次${isAdd ? "增加" : "减少"}的本金金额。`;
+  q("#balanceAdjustSubmitBtn").textContent = isAdd ? "确认增加本金" : "确认减少本金";
   q("#balanceAmountInput").value = "100";
   openModal("balanceAdjustModalBackdrop");
   q("#balanceAmountInput").focus();
@@ -710,12 +708,6 @@ function bindHomeManage() {
         openModal("articleEditorModalBackdrop");
         return;
       }
-      if (action === "toggle") {
-        await apiRequest(`/api/admin/articles/${id}/toggle`, { method: "POST" });
-        await loadAdminData();
-        showToast("文章状态已切换");
-        return;
-      }
       if (action === "archive") {
         await apiRequest(`/api/admin/articles/${id}/archive`, { method: "POST" });
         await loadAdminData();
@@ -741,7 +733,8 @@ function bindUserManage() {
         await loadAdminData();
         showToast("账号状态已更新");
         return;
-      }      if (action === "add" || action === "sub") {
+      }
+      if (action === "add" || action === "sub") {
         const user = state.users.find((item) => item.id === userId);
         openBalanceAdjustModal({
           userId,
@@ -789,12 +782,6 @@ function bindOrderManage() {
         fillOrderForm(row);
         q("#orderModalTitle").textContent = "编辑订单模板";
         openModal("orderEditorModalBackdrop");
-        return;
-      }
-      if (action === "toggle") {
-        await apiRequest(`/api/admin/orders/${id}/toggle`, { method: "POST" });
-        await loadAdminData();
-        showToast("订单状态已切换");
         return;
       }
       if (action === "archive") {
