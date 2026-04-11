@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LockPro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="bg-layer bg-1"></div>
+  <div class="bg-layer bg-2"></div>
+  <div class="bg-layer bg-3"></div>
+
+  <div class="app-shell">
+    <header class="topbar glass">
+      <div class="brand">
+        <div class="brand-dot"></div>
+        <div class="brand-text">
+          <h1>LockPro</h1>
+          <p>Digital Asset Workspace</p>
+        </div>
+      </div>
+
+      <nav class="main-nav liquid-segment" id="mainNav" aria-label="主导航">
+        <span class="segment-indicator" id="segmentIndicator"></span>
+        <button class="nav-btn active" data-section="home">首页</button>
+        <button class="nav-btn" data-section="trade">交易中心</button>
+        <button class="nav-btn" data-section="profile">个人中心</button>
+      </nav>
+
+      <button class="btn ghost" id="authBtn">注册 / 登录</button>
+    </header>
+
+    <main>
+      <section class="section active" id="home">
+        <div class="home-layout">
+          <article class="card glass home-hero">
+            <div class="home-hero-main">
+              <div class="hero-topline">
+                <span class="chip" id="homeChip"></span>
+                <span class="live-tag">LIVE</span>
+              </div>
+              <h2 id="homeHeroTitle"></h2>
+              <p id="homeHeroDesc"></p>
+              <div class="hero-actions" id="homeHeroActions"></div>
+            </div>
+            <div class="hero-stats" id="homeHeroStats"></div>
+          </article>
+
+          <article class="card glass home-overview">
+            <h3>今日概览</h3>
+            <ul class="overview-list" id="homeHighlights"></ul>
+          </article>
+        </div>
+
+        <div class="home-grid">
+          <article class="card glass carousel-wrap">
+            <h3>焦点信息</h3>
+            <div class="carousel glass-soft" id="homeCarousel" aria-label="轮播区域">
+              <div id="homeCarouselItems"></div>
+              <div class="carousel-dots" id="carouselDots"></div>
+            </div>
+          </article>
+
+          <article class="card glass">
+            <h3>快捷入口</h3>
+            <div class="quick-links" id="homeQuickLinks"></div>
+          </article>
+
+          <article class="card glass">
+            <h3>公告</h3>
+            <ul class="news-list" id="homeNotices"></ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="trade">
+        <div class="metric-grid">
+          <article class="card glass metric">
+            <span>账户总额</span>
+            <strong id="metricTotal">$0.00</strong>
+          </article>
+          <article class="card glass metric">
+            <span>可用余额</span>
+            <strong id="metricAvailable">$0.00</strong>
+          </article>
+          <article class="card glass metric">
+            <span>冻结金额</span>
+            <strong id="metricFrozen">$0.00</strong>
+          </article>
+          <article class="card glass metric">
+            <span>累计收益</span>
+            <strong id="metricProfit">$0.00</strong>
+          </article>
+        </div>
+
+        <div class="trade-grid">
+          <article class="card glass pnl-card">
+            <div class="card-head">
+              <h3>收益曲线</h3>
+              <div class="time-filter liquid-segment small" id="timeFilter">
+                <span class="segment-indicator" id="timeIndicator"></span>
+                <button class="time-btn active" data-range="day">日</button>
+                <button class="time-btn" data-range="week">周</button>
+                <button class="time-btn" data-range="month">月</button>
+                <button class="time-btn" data-range="all">全部</button>
+              </div>
+            </div>
+
+            <canvas id="pnlChart" width="760" height="280" aria-label="收益曲线图"></canvas>
+
+            <div class="stats-row">
+              <div class="stat-chip">
+                <span>区间收益</span>
+                <strong id="rangeProfit">$0.00</strong>
+              </div>
+              <div class="stat-chip">
+                <span>区间最高</span>
+                <strong id="rangeHigh">$0.00</strong>
+              </div>
+              <div class="stat-chip">
+                <span>区间最低</span>
+                <strong id="rangeLow">$0.00</strong>
+              </div>
+            </div>
+          </article>
+
+          <article class="card glass orders-card">
+            <div class="card-head">
+              <h3>订单簿</h3>
+              <span class="tag tag-accent">实时开放</span>
+            </div>
+            <div class="order-list" id="orderList"></div>
+          </article>
+        </div>
+
+        <article class="card glass history-card">
+          <div class="card-head">
+            <h3>订单记录</h3>
+            <button class="btn ghost sm" id="settleNowBtn">刷新状态</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>订单号</th>
+                  <th>项目</th>
+                  <th>金额</th>
+                  <th>收益</th>
+                  <th>状态</th>
+                  <th>提交时间</th>
+                </tr>
+              </thead>
+              <tbody id="orderHistoryBody"></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section class="section" id="profile">
+        <div class="profile-grid">
+          <article class="card glass account-card">
+            <h3>账户信息</h3>
+            <div class="account-meta">
+              <div>
+                <span>用户名</span>
+                <strong id="displayUsername">sunny168</strong>
+              </div>
+              <div>
+                <span>账户总额</span>
+                <strong id="profileTotal">$0.00</strong>
+              </div>
+              <div>
+                <span>账户状态</span>
+                <strong id="profileStatus">未登录</strong>
+              </div>
+            </div>
+          </article>
+
+          <article class="card glass payment-card">
+            <h3>充值</h3>
+            <p class="hint">请先完成转账，再提交申请信息以便核对处理。</p>
+            <div class="switch-row">
+              <button class="switch-btn active" type="button" data-deposit-method="digital">数字地址</button>
+              <button class="switch-btn" type="button" data-deposit-method="bank">银行卡</button>
+            </div>
+            <div id="depositDigitalPanel" class="method-panel active">
+              <label class="label">平台收款地址</label>
+              <div class="address-row">
+                <code id="usdtAddress">TRON-TX5V8ZVQ2FJ3L8KM9P6S1N4Q7R2W0YH8J</code>
+                <button class="btn ghost sm" id="copyAddressBtn">复制</button>
+              </div>
+            </div>
+            <div id="depositBankPanel" class="method-panel">
+              <label class="label">平台收款银行卡</label>
+              <div class="bank-info" id="platformBankInfo"></div>
+            </div>
+            <form id="depositForm">
+              <div class="field-row">
+                <div class="field">
+                  <label for="depositAmount">充值金额</label>
+                  <input id="depositAmount" type="number" min="1" step="0.01" required />
+                </div>
+                <div class="field">
+                  <label for="depositTxid">凭证编号</label>
+                  <input id="depositTxid" type="text" required />
+                </div>
+              </div>
+              <div class="field">
+                <label for="depositProof">凭证链接（可选）</label>
+                <input id="depositProof" type="url" placeholder="https://..." />
+              </div>
+              <button class="btn primary" type="submit">提交充值申请</button>
+            </form>
+          </article>
+
+          <article class="card glass payment-card">
+            <h3>提现</h3>
+            <p class="hint">提交信息后进入审核队列，处理完成后状态会更新。</p>
+            <form id="withdrawForm">
+              <div class="field">
+                <label for="withdrawAmount">提现金额</label>
+                <input id="withdrawAmount" type="number" min="1" step="0.01" required />
+              </div>
+              <div class="switch-row">
+                <button class="switch-btn active" type="button" data-method="usdt">数字地址</button>
+                <button class="switch-btn" type="button" data-method="bank">银行卡</button>
+              </div>
+
+              <div id="withdrawUSDT" class="method-panel active">
+                <div class="field">
+                  <label for="withdrawUsdtAddress">收款地址</label>
+                  <input id="withdrawUsdtAddress" type="text" />
+                </div>
+              </div>
+
+              <div id="withdrawBank" class="method-panel">
+                <div class="field-row">
+                  <div class="field">
+                    <label for="bankName">开户行</label>
+                    <input id="bankName" type="text" />
+                  </div>
+                  <div class="field">
+                    <label for="bankOwner">户名</label>
+                    <input id="bankOwner" type="text" />
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="bankNo">银行卡号</label>
+                  <input id="bankNo" type="text" />
+                </div>
+              </div>
+              <button class="btn primary" type="submit">提交提现申请</button>
+            </form>
+          </article>
+
+          <article class="card glass records-card">
+            <div class="card-head">
+              <h3>记录</h3>
+              <div class="switch-row compact">
+                <button class="switch-btn active" type="button" data-record="deposit">充值记录</button>
+                <button class="switch-btn" type="button" data-record="withdraw">提现记录</button>
+                <button class="switch-btn" type="button" data-record="order">订单记录</button>
+              </div>
+            </div>
+            <ul id="recordList" class="record-list"></ul>
+          </article>
+
+          <article class="card glass reserved-card">
+            <h3>扩展模块</h3>
+            <p class="hint">以下模块已预留入口，将在后续版本开放。</p>
+            <div class="reserved-actions">
+              <button class="btn ghost" disabled>推广</button>
+              <button class="btn ghost" disabled>用户等级</button>
+              <button class="btn ghost" disabled>社区奖励金</button>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="orderModalBackdrop">
+    <div class="modal glass order-modal">
+      <div class="card-head">
+        <h3>下单确认</h3>
+        <button class="icon-btn" id="closeOrderModal" aria-label="关闭">×</button>
+      </div>
+      <div class="modal-body">
+        <p id="selectedProductName">-</p>
+        <p class="hint" id="selectedProductMeta">确认金额后提交，系统将自动生成订单号。</p>
+        <div class="field">
+          <label for="orderAmount">下单金额</label>
+          <input id="orderAmount" type="number" min="1" step="0.01" />
+        </div>
+        <div class="quick-amounts">
+          <button class="btn ghost sm" data-portion="0.25">25%</button>
+          <button class="btn ghost sm" data-portion="0.5">50%</button>
+          <button class="btn ghost sm" data-portion="1">全部</button>
+        </div>
+      </div>
+      <button class="btn primary" id="confirmOrderBtn">确认下单</button>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="authModalBackdrop">
+    <div class="modal glass auth-modal">
+      <div class="auth-head">
+        <div>
+          <h3>账户入口</h3>
+          <p>欢迎回来，请先完成身份验证</p>
+        </div>
+        <button class="icon-btn" id="closeAuthModal" aria-label="关闭">×</button>
+      </div>
+
+      <div class="auth-tabs liquid-segment small" id="authTabs">
+        <span class="segment-indicator" id="authIndicator"></span>
+        <button class="auth-tab active" type="button" data-auth-type="login">登录</button>
+        <button class="auth-tab" type="button" data-auth-type="register">注册</button>
+      </div>
+
+      <form class="modal-body" id="authForm">
+        <div class="field">
+          <label for="authChannel">登录方式</label>
+          <input type="hidden" id="authChannel" value="account" />
+          <div class="custom-select" id="authChannelSelect" role="listbox" aria-labelledby="authChannel">
+            <button class="custom-select-trigger" type="button" id="authChannelTrigger">
+              <span id="authChannelLabel">账号登录</span>
+              <span class="custom-select-arrow"></span>
+            </button>
+            <div class="custom-select-menu" id="authChannelMenu">
+              <button type="button" class="custom-select-option active" data-value="account">账号登录</button>
+              <button type="button" class="custom-select-option" data-value="email">邮箱登录</button>
+              <button type="button" class="custom-select-option" data-value="phone">手机号登录</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="authUsername">账号</label>
+            <input id="authUsername" type="text" required />
+          </div>
+          <div class="field">
+            <label for="authPassword">密码</label>
+            <input id="authPassword" type="password" required />
+          </div>
+        </div>
+
+        <div class="field" id="confirmPasswordField">
+          <label for="authConfirmPassword">确认密码</label>
+          <input id="authConfirmPassword" type="password" />
+        </div>
+
+        <label class="check-row" id="agreementCheckRow">
+          <input type="checkbox" id="agreementCheck" />
+          <span>我已阅读并同意 <button type="button" class="text-link" id="openAgreementBtn">《用户协议》</button></span>
+        </label>
+
+        <button class="btn primary auth-submit" type="submit" id="authSubmitBtn">立即登录</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="agreementModalBackdrop">
+    <div class="modal glass agreement-modal">
+      <div class="card-head">
+        <h3>用户协议</h3>
+        <button class="icon-btn" id="closeAgreementModal" aria-label="关闭">×</button>
+      </div>
+      <div class="agreement-content" id="agreementContent"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
