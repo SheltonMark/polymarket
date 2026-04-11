@@ -1,4 +1,4 @@
-const state = {
+﻿const state = {
   user: {
     username: "sunny168",
     registered: false,
@@ -11,6 +11,7 @@ const state = {
   },
   chartSeries: [],
   activeRange: "day",
+  orderPreviewLimit: 4,
   products: [
     {
       id: "od_301",
@@ -40,6 +41,26 @@ const state = {
       durationMs: 70 * 1000,
       minRate: 0.022,
       maxRate: 0.05,
+      status: "open",
+    },
+    {
+      id: "od_304",
+      name: "Value Matrix",
+      subtitle: "多市场覆盖，策略稳定",
+      minAmount: 180,
+      durationMs: 52 * 1000,
+      minRate: 0.019,
+      maxRate: 0.041,
+      status: "open",
+    },
+    {
+      id: "od_305",
+      name: "Pulse Select",
+      subtitle: "快节奏标的池，流转效率高",
+      minAmount: 260,
+      durationMs: 66 * 1000,
+      minRate: 0.02,
+      maxRate: 0.048,
       status: "open",
     },
   ],
@@ -86,7 +107,6 @@ const defaultSiteConfig = {
       { label: "今日访问", value: "12,860" },
       { label: "在线用户", value: "1,284" },
       { label: "已完成订单", value: "9,462" },
-      { label: "系统稳定性", value: "99.98%" },
     ],
     highlights: [
       { title: "资产更新", desc: "账户资产卡片随交易状态刷新，关键数值优先展示。" },
@@ -177,7 +197,7 @@ function applySiteConfig(config) {
     const btn = document.createElement("button");
     btn.className = `btn ${item.variant === "ghost" ? "ghost" : "primary"}`;
     btn.dataset.jump = safeString(item.target, "trade");
-    btn.textContent = safeString(item.label, "进入");
+    btn.textContent = safeString(item.label, "杩涘叆");
     actionRoot.appendChild(btn);
   });
 
@@ -224,7 +244,7 @@ function applySiteConfig(config) {
     const btn = document.createElement("button");
     btn.className = "quick-link";
     btn.dataset.jump = safeString(item.target, "trade");
-    btn.textContent = safeString(item.label, "进入");
+    btn.textContent = safeString(item.label, "杩涘叆");
     quickRoot.appendChild(btn);
   });
 
@@ -243,10 +263,10 @@ function applySiteConfig(config) {
   const bank = paymentConfig.bank || defaultSiteConfig.payment.bank;
   const bankInfoRoot = q("#platformBankInfo");
   bankInfoRoot.innerHTML = `
-    <div class="bank-line"><span>开户行</span><span>${safeString(bank.bankName, defaultSiteConfig.payment.bank.bankName)}</span></div>
-    <div class="bank-line"><span>户名</span><span>${safeString(bank.accountName, defaultSiteConfig.payment.bank.accountName)}</span></div>
-    <div class="bank-line"><span>卡号</span><span>${safeString(bank.accountNo, defaultSiteConfig.payment.bank.accountNo)}</span></div>
-    <div class="bank-line"><span>支行</span><span>${safeString(bank.branch, defaultSiteConfig.payment.bank.branch)}</span></div>
+    <div class="bank-line"><span>寮€鎴疯</span><span>${safeString(bank.bankName, defaultSiteConfig.payment.bank.bankName)}</span></div>
+    <div class="bank-line"><span>鎴峰悕</span><span>${safeString(bank.accountName, defaultSiteConfig.payment.bank.accountName)}</span></div>
+    <div class="bank-line"><span>鍗″彿</span><span>${safeString(bank.accountNo, defaultSiteConfig.payment.bank.accountNo)}</span></div>
+    <div class="bank-line"><span>鏀</span><span>${safeString(bank.branch, defaultSiteConfig.payment.bank.branch)}</span></div>
   `;
 
   const agreementNode = q("#agreementContent");
@@ -537,14 +557,9 @@ function createOrderCode() {
   return `ODR${y}${m}${d}${suffix}`;
 }
 
-function renderOrderProducts() {
-  const root = q("#orderList");
-  root.innerHTML = "";
-
-  state.products.forEach((product) => {
-    const item = document.createElement("article");
-    item.className = "order-item";
-    item.innerHTML = `
+function renderProductCard(product, compact = false) {
+  if (compact) {
+    return `
       <div class="title-row">
         <h4>${product.name}</h4>
         <span class="status done">开放中</span>
@@ -558,21 +573,86 @@ function renderOrderProducts() {
         <button class="btn primary sm" data-invest-id="${product.id}">立即下单</button>
       </div>
     `;
+  }
+
+  return `
+    <div class="all-product-head">
+      <h4>${product.name}</h4>
+      <span class="status done">开放中</span>
+    </div>
+    <p>${product.subtitle}</p>
+    <div class="meta-row">
+      <span class="meta-pill">起投 ${money(product.minAmount)}</span>
+      <span class="meta-pill">优先撮合</span>
+    </div>
+    <div style="margin-top:10px;">
+      <button class="btn primary sm" data-invest-id="${product.id}">立即下单</button>
+    </div>
+  `;
+}
+
+function bindInvestButtons(scopeRoot = document) {
+  scopeRoot.querySelectorAll("[data-invest-id]").forEach((btn) => {
+    btn.onclick = () => openOrderModal(btn.dataset.investId);
+  });
+}
+
+function renderOrderProducts() {
+  const root = q("#orderList");
+  root.innerHTML = "";
+
+  const preview = state.products.slice(0, state.orderPreviewLimit);
+  preview.forEach((product) => {
+    const item = document.createElement("article");
+    item.className = "order-item";
+    item.innerHTML = renderProductCard(product, true);
     root.appendChild(item);
   });
 
-  qq("[data-invest-id]").forEach((btn) => {
-    btn.addEventListener("click", () => openOrderModal(btn.dataset.investId));
+  const remainCount = state.products.length - preview.length;
+  if (remainCount > 0) {
+    const tip = document.createElement("article");
+    tip.className = "order-item order-preview-note";
+    tip.innerHTML = `<p>还有 ${remainCount} 个订单可选，点击“查看全部”浏览完整列表。</p>`;
+    root.appendChild(tip);
+  }
+
+  bindInvestButtons(root);
+  renderAllProductsList();
+}
+
+function renderAllProductsList() {
+  const root = q("#allProductsList");
+  if (!root) return;
+  root.innerHTML = "";
+
+  if (!state.products.length) {
+    root.innerHTML = `<div class="order-item">暂无可用订单</div>`;
+    return;
+  }
+
+  state.products.forEach((product) => {
+    const item = document.createElement("article");
+    item.className = "order-item all-product-item";
+    item.innerHTML = renderProductCard(product, false);
+    root.appendChild(item);
   });
+
+  bindInvestButtons(root);
 }
 
 function getProductById(productId) {
   return state.products.find((item) => item.id === productId);
 }
 
+function closeProductsModal() {
+  q("#productsModalBackdrop")?.classList.remove("open");
+}
+
 function openOrderModal(productId) {
   const product = getProductById(productId);
   if (!product) return;
+  closeProductsModal();
   state.selectedProductId = productId;
   q("#selectedProductName").textContent = product.name;
   q("#orderAmount").value = "";
@@ -581,6 +661,11 @@ function openOrderModal(productId) {
 
 function closeOrderModal() {
   q("#orderModalBackdrop").classList.remove("open");
+}
+
+function openProductsModal() {
+  renderAllProductsList();
+  q("#productsModalBackdrop")?.classList.add("open");
 }
 
 function createOrder(product, amount) {
@@ -692,6 +777,7 @@ function copyAddress() {
     );
     return;
   }
+
   const temp = document.createElement("textarea");
   temp.value = address;
   document.body.appendChild(temp);
@@ -734,6 +820,7 @@ function initPaymentForms() {
       showToast("请填写完整的充值信息", true);
       return;
     }
+
     state.depositRecords.unshift({
       amount,
       txid,
@@ -741,6 +828,7 @@ function initPaymentForms() {
       status: "待处理",
       time: Date.now(),
     });
+
     event.target.reset();
     renderRecords();
     showToast("充值申请已提交");
@@ -770,6 +858,7 @@ function initPaymentForms() {
       status: "待处理",
       time: Date.now(),
     });
+
     event.target.reset();
     state.withdrawMethod = "usdt";
     qq(".switch-btn[data-method]").forEach((btn) => {
@@ -958,6 +1047,14 @@ function initOrderModal() {
   });
 }
 
+function initProductsModal() {
+  q("#viewAllProductsBtn")?.addEventListener("click", openProductsModal);
+  q("#closeProductsModal")?.addEventListener("click", closeProductsModal);
+  q("#productsModalBackdrop")?.addEventListener("click", (event) => {
+    if (event.target.id === "productsModalBackdrop") closeProductsModal();
+  });
+}
+
 function initTimeFilter() {
   qq(".time-btn[data-range]").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -998,6 +1095,7 @@ async function init() {
   seedInitialData();
   initNav();
   initOrderModal();
+  initProductsModal();
   initTimeFilter();
   initPaymentForms();
   initRecordSwitch();
@@ -1022,3 +1120,13 @@ async function init() {
 }
 
 init();
+
+
+
+
+
+
+
+
+
+

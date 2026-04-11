@@ -134,7 +134,9 @@
           <article class="card glass orders-card">
             <div class="card-head">
               <h3>订单簿</h3>
-              <span class="tag tag-accent">实时开放</span>
+              <div class="order-card-actions">
+                <button class="btn ghost sm view-all-btn" id="viewAllProductsBtn">查看全部</button>
+              </div>
             </div>
             <div class="order-list" id="orderList"></div>
           </article>
@@ -306,6 +308,17 @@
         </div>
       </div>
       <button class="btn primary" id="confirmOrderBtn">确认下单</button>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="productsModalBackdrop">
+    <div class="modal glass products-modal">
+      <div class="card-head">
+        <h3>全部订单</h3>
+        <button class="icon-btn" id="closeProductsModal" aria-label="关闭">×</button>
+      </div>
+      <p class="hint products-hint">可选择任意订单进行下单。</p>
+      <div class="all-products-list" id="allProductsList"></div>
     </div>
   </div>
 
