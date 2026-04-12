@@ -1041,8 +1041,8 @@ function renderUserOrdersTable(orders) {
         <td>${formatMoney(o.amount)}</td>
         <td>${formatMoney(o.profit)}</td>
         <td><span class="status ${userOrderStatusClass(o.status)}">${userOrderStatusText(o.status)}</span></td>
-        <td>${escapeHtml(o.submittedAt || "")}</td>
-        <td>${escapeHtml(o.settleAt || "")}</td>
+        <td style="white-space:nowrap">${escapeHtml(o.submittedAt || "")}</td>
+        <td style="white-space:nowrap">${escapeHtml(o.settleAt || "")}</td>
       </tr>
     `)
     .join("");
@@ -1055,11 +1055,31 @@ function syncDeleteBtnState() {
   q("#deleteSelectedOrdersBtn").disabled = !checked.length;
 }
 
+let _confirmDeleteResolve = null;
+
+function showConfirmDeleteModal(count) {
+  return new Promise((resolve) => {
+    _confirmDeleteResolve = resolve;
+    q("#confirmDeleteMsg").textContent = `确认删除选中的 ${count} 条订单？已完成订单的收益将被扣减，进行中订单将解冻本金。`;
+    openModal("confirmDeleteModalBackdrop");
+  });
+}
+
+function closeConfirmDeleteModal(result) {
+  closeModal("confirmDeleteModalBackdrop");
+  if (_confirmDeleteResolve) {
+    _confirmDeleteResolve(result);
+    _confirmDeleteResolve = null;
+  }
+}
+
 async function deleteSelectedOrders() {
   const checked = qq(".user-order-check:checked");
   const ids = [...checked].map((c) => c.dataset.oid);
   if (!ids.length) return;
-  if (!confirm(`确认删除选中的 ${ids.length} 条订单？已完成订单的收益将被扣减，进行中订单将解冻。`)) return;
+
+  const confirmed = await showConfirmDeleteModal(ids.length);
+  if (!confirmed) return;
 
   try {
     await apiRequest(`/api/admin/users/${_userOrdersUserId}/delete-orders`, { method: "POST", body: { orderIds: ids } });
@@ -1093,6 +1113,12 @@ function bindUserOrdersModal() {
   });
 
   q("#deleteSelectedOrdersBtn").addEventListener("click", deleteSelectedOrders);
+
+  q("#confirmDeleteYes").addEventListener("click", () => closeConfirmDeleteModal(true));
+  q("#confirmDeleteNo").addEventListener("click", () => closeConfirmDeleteModal(false));
+  q("#confirmDeleteModalBackdrop").addEventListener("click", (e) => {
+    if (e.target.id === "confirmDeleteModalBackdrop") closeConfirmDeleteModal(false);
+  });
 }
 
 function bindEventsOnce() {

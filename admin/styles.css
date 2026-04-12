@@ -509,6 +509,7 @@ tbody tr:hover {
   padding: 4px 8px;
   font-size: 0.74rem;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .status.pending {
@@ -732,6 +733,11 @@ tbody tr:hover {
   overflow: auto;
   border-radius: 20px;
   padding: 18px;
+}
+
+.modal-wide {
+  width: min(960px, 96vw);
+  max-height: min(88vh, 900px);
 }
 
 .admin-editor-modal .card-head {

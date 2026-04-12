@@ -625,17 +625,16 @@
   </div>
 
   <div class="modal-backdrop" id="userOrdersModalBackdrop">
-    <div class="modal glass admin-editor-modal" style="max-width:860px;width:92vw;">
+    <div class="modal glass admin-editor-modal modal-wide">
       <div class="card-head">
         <h3 id="userOrdersTitle">用户订单</h3>
         <button class="icon-btn" id="closeUserOrdersModal" aria-label="关闭">×</button>
       </div>
       <p class="hint" id="userOrdersHint">查看与管理用户历史订单，可勾选多条后批量删除（已完成订单将扣减收益，进行中订单将解冻本金）。</p>
-      <div class="row-actions" style="margin-bottom:8px;gap:8px;">
-        <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:13px;">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+        <label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;font-size:13px;white-space:nowrap;">
           <input type="checkbox" id="userOrdersSelectAll" /> 全选
         </label>
-        <button class="btn danger" id="deleteSelectedOrdersBtn" disabled>删除选中</button>
       </div>
       <div class="table-wrap" style="max-height:55vh;overflow-y:auto;">
         <table>
@@ -654,8 +653,20 @@
           <tbody id="userOrdersTableBody"></tbody>
         </table>
       </div>
-      <div class="row-actions" style="margin-top:12px;">
-        <button class="btn ghost" type="button" id="cancelUserOrdersBtn">关闭</button>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;">
+        <button class="btn ghost sm" type="button" id="cancelUserOrdersBtn">关闭</button>
+        <button class="btn danger sm" id="deleteSelectedOrdersBtn" disabled>删除选中</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="confirmDeleteModalBackdrop">
+    <div class="modal glass admin-editor-modal" style="text-align:center;padding:28px 24px;">
+      <h3 style="margin-bottom:8px;" id="confirmDeleteTitle">确认删除</h3>
+      <p class="hint" id="confirmDeleteMsg" style="margin-bottom:20px;"></p>
+      <div class="row-actions" style="justify-content:center;gap:12px;">
+        <button class="btn danger" id="confirmDeleteYes">确认删除</button>
+        <button class="btn ghost" id="confirmDeleteNo">取消</button>
       </div>
     </div>
   </div>
