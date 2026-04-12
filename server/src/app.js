@@ -290,6 +290,8 @@ async function getAdminState() {
             available_balance AS available,
             principal_available AS principalAvailable,
             frozen_balance AS frozen,
+            profit_available AS profitAvailable,
+            total_profit AS totalProfit,
             status,
             created_at AS createdAt
      FROM users

@@ -244,6 +244,9 @@ body {
 
 .content-main {
   min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .section {
@@ -252,7 +255,9 @@ body {
 }
 
 .section.active {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 @keyframes section-in {

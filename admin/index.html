@@ -108,31 +108,33 @@
               <strong id="metricWalletFrozen">$0.00</strong>
             </article>
             <article class="card glass metric">
+              <span>用户总资产</span>
+              <strong id="metricTotalAssets">$0.00</strong>
+            </article>
+            <article class="card glass metric">
+              <span>用户本金总额</span>
+              <strong id="metricTotalPrincipal">$0.00</strong>
+            </article>
+            <article class="card glass metric">
+              <span>用户总收益</span>
+              <strong id="metricTotalProfit">$0.00</strong>
+            </article>
+            <article class="card glass metric">
               <span>未归档文章数</span>
               <strong id="metricArticleCount">0</strong>
             </article>
-          </div>
-
-          <div class="split-grid">
-            <article class="card glass">
-              <div class="card-head">
-                <h3>待处理事项</h3>
-              </div>
-              <ul class="list" id="pendingList"></ul>
-              <div class="quick-actions">
-                <button class="btn ghost sm" data-jump="deposit-manage">去审核充值</button>
-                <button class="btn ghost sm" data-jump="withdraw-manage">去审核提现</button>
-                <button class="btn ghost sm" data-jump="order-manage">去管理订单</button>
-              </div>
-            </article>
-
-            <article class="card glass">
-              <div class="card-head">
-                <h3>最近操作</h3>
-              </div>
-              <ul class="list" id="recentActivityList"></ul>
+            <article class="card glass metric">
+              <span>封禁账号数</span>
+              <strong id="metricBannedCount">0</strong>
             </article>
           </div>
+
+          <article class="card glass" style="margin-top:12px;flex:1;">
+            <div class="card-head">
+              <h3>最近操作</h3>
+            </div>
+            <ul class="list" id="recentActivityList"></ul>
+          </article>
         </section>
 
         <section class="section" id="home-manage">

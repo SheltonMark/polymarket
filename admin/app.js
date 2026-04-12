@@ -118,28 +118,27 @@ function pendingWithdrawCount() {
 
 function renderOverview() {
   const enabledCount = state.users.filter((item) => item.status === "enabled").length;
+  const bannedCount = state.users.filter((item) => item.status === "banned").length;
   const onShelfCount = state.orders.filter((item) => !item.archived && item.status === "on_shelf").length;
   const totalAvailable = state.users.reduce((sum, item) => sum + (Number(item.available) || 0), 0);
   const totalFrozen = state.users.reduce((sum, item) => sum + (Number(item.frozen) || 0), 0);
+  const totalPrincipal = state.users.reduce((sum, item) => sum + (Number(item.principalAvailable) || 0) + (Number(item.frozen) || 0), 0);
+  const totalProfit = state.users.reduce((sum, item) => sum + (Number(item.totalProfit) || 0), 0);
+  const totalAssets = totalAvailable + totalFrozen;
   const articleCount = state.articles.filter((item) => item.status !== "archived").length;
 
   q("#metricUserCount").textContent = String(state.users.length);
   q("#metricEnabledCount").textContent = String(enabledCount);
+  q("#metricBannedCount").textContent = String(bannedCount);
   q("#metricOrderOnShelf").textContent = String(onShelfCount);
   q("#metricPendingDeposits").textContent = String(pendingDepositCount());
   q("#metricPendingWithdraws").textContent = String(pendingWithdrawCount());
   q("#metricWalletAvailable").textContent = formatMoney(totalAvailable);
   q("#metricWalletFrozen").textContent = formatMoney(totalFrozen);
+  q("#metricTotalAssets").textContent = formatMoney(totalAssets);
+  q("#metricTotalPrincipal").textContent = formatMoney(totalPrincipal);
+  q("#metricTotalProfit").textContent = formatMoney(totalProfit);
   q("#metricArticleCount").textContent = String(articleCount);
-
-  const pendingRoot = q("#pendingList");
-  pendingRoot.innerHTML = [
-    `待审核充值：${pendingDepositCount()} 笔`,
-    `待审核提现：${pendingWithdrawCount()} 笔`,
-    `在架订单模板：${onShelfCount} 个`,
-  ]
-    .map((item) => `<li>${item}</li>`)
-    .join("");
 
   const activityRoot = q("#recentActivityList");
   if (!state.activities.length) {
@@ -147,7 +146,7 @@ function renderOverview() {
     return;
   }
   activityRoot.innerHTML = state.activities
-    .slice(0, 8)
+    .slice(0, 10)
     .map((item) => `<li><strong>${escapeHtml(item.time)}</strong> ${escapeHtml(item.text)}</li>`)
     .join("");
 }
