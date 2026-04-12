@@ -26,6 +26,83 @@ function makeId(prefix) {
   return `${prefix}_${Date.now()}${Math.floor(Math.random() * 1000)}`;
 }
 
+const DEFAULT_PROJECT_POOL = [
+  "Value Matrix",
+  "Value Matrix Alpha",
+  "Value Matrix Beta",
+  "Signal Harbor",
+  "Signal Harbor Prime",
+  "Nova Grid",
+  "Nova Grid Plus",
+  "Apex Flow",
+  "Apex Flow Core",
+  "Orion Pulse",
+  "Orion Pulse Pro",
+  "Delta Quantum",
+  "Delta Quantum One",
+  "Momentum Core",
+  "Momentum Core X",
+  "Prime Arc",
+  "Prime Arc R",
+  "Vector Bridge",
+  "Vector Bridge Max",
+  "Helix Track",
+  "Helix Track 7",
+  "Zenith Node",
+  "Zenith Node Q",
+  "Atlas Drive",
+  "Atlas Drive Z",
+  "Aurora Link",
+  "Aurora Link Neo",
+  "Titan Sync",
+  "Titan Sync Plus",
+  "Pulse Select",
+  "Pulse Select Pro",
+  "Event Alpha",
+  "Event Alpha Max",
+  "Prime Growth",
+  "Prime Growth C",
+  "Cross Beam",
+  "Cross Beam One",
+  "Falcon Route",
+  "Falcon Route 9",
+  "Lattice Point",
+  "Lattice Point G",
+  "Vertex One",
+  "Vertex One S",
+  "Echo Matrix",
+  "Echo Matrix 3",
+  "Nimbus Vault",
+  "Nimbus Vault M",
+  "Quantum Drift",
+  "Quantum Drift V",
+  "Meridian Track",
+  "Meridian Track K",
+];
+
+function getDefaultOrderGenerationRange() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return {
+    start: `${y}-${m}-${d} 09:00:00`,
+    end: `${y}-${m}-${d} 18:00:00`,
+  };
+}
+
+function getDefaultOrderGenerationConfig() {
+  const range = getDefaultOrderGenerationRange();
+  return {
+    freezeMin: 1,
+    freezeMax: 4,
+    rateMin: 2,
+    rateMax: 4.5,
+    timeStart: range.start,
+    timeEnd: range.end,
+    projectPool: DEFAULT_PROJECT_POOL,
+  };
+}
 async function seedInitialData(db) {
   const now = nowString();
   const adminPasswordHash = await bcrypt.hash("admin123456", 10);
@@ -62,6 +139,24 @@ async function seedInitialData(db) {
     [
       1,
       `【用户协议】\n\n1. 用户在注册前应完整阅读并同意本协议条款。\n2. 用户需确保提交的账户与收款信息真实、有效、可核验。\n3. 平台有权依据风控规则对异常行为进行限制或进一步核验。\n4. 用户应妥善保管账号与密码，因个人原因造成的损失由用户承担。\n5. 本协议最终解释与更新说明以平台最新发布版本为准。`,
+      now,
+    ]
+  );
+
+  const defaultConfig = getDefaultOrderGenerationConfig();
+  await db.run(
+    `INSERT INTO order_generation_defaults (
+      id, freeze_min, freeze_max, rate_min, rate_max,
+      time_start, time_end, project_pool, updated_at
+    ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?)` ,
+    [
+      defaultConfig.freezeMin,
+      defaultConfig.freezeMax,
+      defaultConfig.rateMin,
+      defaultConfig.rateMax,
+      defaultConfig.timeStart,
+      defaultConfig.timeEnd,
+      JSON.stringify(defaultConfig.projectPool),
       now,
     ]
   );
@@ -491,6 +586,17 @@ export async function initDb() {
       updated_at TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS order_generation_defaults (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      freeze_min INTEGER NOT NULL,
+      freeze_max INTEGER NOT NULL,
+      rate_min REAL NOT NULL,
+      rate_max REAL NOT NULL,
+      time_start TEXT NOT NULL,
+      time_end TEXT NOT NULL,
+      project_pool TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS user_orders (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL,
@@ -580,5 +686,26 @@ export async function initDb() {
     await seedInitialData(db);
   }
 
-  return db;
+
+  const defaultConfig = getDefaultOrderGenerationConfig();
+  await db.run(
+    `INSERT OR IGNORE INTO order_generation_defaults (
+      id, freeze_min, freeze_max, rate_min, rate_max,
+      time_start, time_end, project_pool, updated_at
+    ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      defaultConfig.freezeMin,
+      defaultConfig.freezeMax,
+      defaultConfig.rateMin,
+      defaultConfig.rateMax,
+      defaultConfig.timeStart,
+      defaultConfig.timeEnd,
+      JSON.stringify(defaultConfig.projectPool),
+      getNowString(),
+    ]
+  );  return db;
 }
+
+
+
+

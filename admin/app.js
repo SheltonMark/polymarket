@@ -1,10 +1,11 @@
-﻿const API_BASE = "";
+const API_BASE = "";
 const ADMIN_TOKEN_KEY = "lockpro_admin_token";
 
 const SECTION_META = {
   overview: { title: "数据概览", desc: "查看用户、资金、订单与内容的核心数据。" },
   "home-manage": { title: "首页管理", desc: "配置首页标题与文章内容。" },
   "user-manage": { title: "用户管理", desc: "查看用户信息并执行余额加减与账号状态管理。" },
+  "order-config": { title: "订单配置", desc: "配置批量生成订单的默认参数（冻结、收益、时间、项目名）。" },
   "order-manage": { title: "订单管理", desc: "配置订单模板状态与归档。" },
   "deposit-manage": { title: "充值管理", desc: "审核用户充值申请，支持通过或驳回。" },
   "withdraw-manage": { title: "提现管理", desc: "审核用户提现申请，支持通过或驳回。" },
@@ -192,17 +193,19 @@ function renderArticleTable() {
 function renderUserTable() {
   const body = q("#userTableBody");
   if (!state.users.length) {
-    body.innerHTML = '<tr><td colspan="7" class="empty">暂无用户</td></tr>';
+    body.innerHTML = '<tr><td colspan="8" class="empty">暂无用户</td></tr>';
     return;
   }
 
   body.innerHTML = state.users
     .map((user) => {
       const statusLabel = user.status === "enabled" ? "启用" : "封禁";
+      const principal = formatMoney((Number(user.principalAvailable) || 0) + (Number(user.frozen) || 0));
       return `
         <tr>
           <td>${escapeHtml(user.account)}</td>
           <td>${escapeHtml(user.profile)}</td>
+          <td>${principal}</td>
           <td>${formatMoney(user.available)}</td>
           <td>${formatMoney(user.frozen)}</td>
           <td><span class="status ${user.status}">${statusLabel}</span></td>
@@ -211,6 +214,8 @@ function renderUserTable() {
             <div class="cell-actions">
               <button class="btn success sm" data-user-action="add" data-id="${user.id}">加余额</button>
               <button class="btn danger sm" data-user-action="sub" data-id="${user.id}">减余额</button>
+              <button class="btn primary sm" data-user-action="generate" data-id="${user.id}">生成订单</button>
+              <button class="btn sm" data-user-action="viewOrders" data-id="${user.id}" style="background:#6366f1;color:#fff;">查看订单</button>
               <button class="btn ghost sm" data-user-action="toggle" data-id="${user.id}">${user.status === "enabled" ? "封禁" : "启用"}</button>
             </div>
           </td>
@@ -719,6 +724,117 @@ function bindHomeManage() {
   });
 }
 
+function openGenerateOrdersModal(userId) {
+  const user = state.users.find((item) => item.id === userId);
+  if (!user) return;
+  q("#genUserId").value = userId;
+  q("#generateOrdersHint").textContent = `目标用户：${user.account}，可用本金：${formatMoney(user.principalAvailable)}`;
+  q("#genTotalAmount").value = "";
+  q("#genOrderCount").value = "5";
+  q("#genFreezeMin").value = "";
+  q("#genFreezeMax").value = "";
+  q("#genRateMin").value = "";
+  q("#genRateMax").value = "";
+  q("#genTimeStart").value = "";
+  q("#genTimeEnd").value = "";
+  openModal("generateOrdersModalBackdrop");
+  q("#genTotalAmount").focus();
+}
+
+function closeGenerateOrdersModal() {
+  q("#generateOrdersForm").reset();
+  closeModal("generateOrdersModalBackdrop");
+}
+
+function bindGenerateOrdersModal() {
+  q("#closeGenerateOrdersModal").addEventListener("click", closeGenerateOrdersModal);
+  q("#cancelGenerateOrdersBtn").addEventListener("click", closeGenerateOrdersModal);
+  q("#generateOrdersModalBackdrop").addEventListener("click", (event) => {
+    if (event.target.id === "generateOrdersModalBackdrop") closeGenerateOrdersModal();
+  });
+
+  q("#generateOrdersForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const userId = q("#genUserId").value;
+    const totalAmount = Number(q("#genTotalAmount").value || 0);
+    const orderCount = Number(q("#genOrderCount").value || 1);
+
+    if (!userId || totalAmount <= 0 || orderCount < 1) {
+      showToast("请填写有效的总金额和订单条数", true);
+      return;
+    }
+
+    const body = { totalAmount, orderCount };
+    const fMin = q("#genFreezeMin").value;
+    const fMax = q("#genFreezeMax").value;
+    const rMin = q("#genRateMin").value;
+    const rMax = q("#genRateMax").value;
+    const tStart = q("#genTimeStart").value;
+    const tEnd = q("#genTimeEnd").value;
+
+    if (fMin) body.freezeMin = Number(fMin);
+    if (fMax) body.freezeMax = Number(fMax);
+    if (rMin) body.rateMin = Number(rMin);
+    if (rMax) body.rateMax = Number(rMax);
+    if (tStart) body.timeStart = tStart.replace("T", " ") + ":00";
+    if (tEnd) body.timeEnd = tEnd.replace("T", " ") + ":00";
+
+    try {
+      const result = await apiRequest(`/api/admin/users/${userId}/generate-orders`, {
+        method: "POST",
+        body,
+      });
+      await loadAdminData();
+      closeGenerateOrdersModal();
+      showToast(`已生成 ${result.generated} 笔订单（完成${result.doneCount}笔，进行中${result.runningCount}笔）`);
+    } catch (error) {
+      showToast(error.message, true);
+    }
+  });
+}
+
+async function loadOrderGenDefaults() {
+  try {
+    const data = await apiRequest("/api/admin/order-generation-defaults");
+    q("#ogdFreezeMin").value = String(data.freezeMin || 1);
+    q("#ogdFreezeMax").value = String(data.freezeMax || 4);
+    q("#ogdRateMin").value = String(data.rateMin || 2);
+    q("#ogdRateMax").value = String(data.rateMax || 4.5);
+    if (data.timeStart) {
+      q("#ogdTimeStart").value = data.timeStart.replace(" ", "T").slice(0, 16);
+    }
+    if (data.timeEnd) {
+      q("#ogdTimeEnd").value = data.timeEnd.replace(" ", "T").slice(0, 16);
+    }
+    const pool = Array.isArray(data.projectPool) ? data.projectPool : [];
+    q("#ogdProjectPool").value = pool.join("\n");
+  } catch { /* keep form empty */ }
+}
+
+function bindOrderGenDefaults() {
+  q("#orderGenDefaultsForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const freezeMin = Number(q("#ogdFreezeMin").value || 0);
+    const freezeMax = Number(q("#ogdFreezeMax").value || 0);
+    const rateMin = Number(q("#ogdRateMin").value || 0);
+    const rateMax = Number(q("#ogdRateMax").value || 0);
+    const timeStart = (q("#ogdTimeStart").value || "").replace("T", " ") + ":00";
+    const timeEnd = (q("#ogdTimeEnd").value || "").replace("T", " ") + ":00";
+    const poolText = q("#ogdProjectPool").value.trim();
+    const projectPool = poolText ? poolText.split("\n").map((s) => s.trim()).filter(Boolean) : [];
+
+    try {
+      await apiRequest("/api/admin/order-generation-defaults", {
+        method: "PUT",
+        body: { freezeMin, freezeMax, rateMin, rateMax, timeStart, timeEnd, projectPool },
+      });
+      showToast("默认配置已保存");
+    } catch (error) {
+      showToast(error.message, true);
+    }
+  });
+}
+
 function bindUserManage() {
   q("#userTableBody").addEventListener("click", async (event) => {
     const button = event.target.closest("button[data-user-action]");
@@ -741,6 +857,15 @@ function bindUserManage() {
           direction: action,
           account: user?.account || "未知用户",
         });
+        return;
+      }
+      if (action === "generate") {
+        openGenerateOrdersModal(userId);
+        return;
+      }
+      if (action === "viewOrders") {
+        openUserOrdersModal(userId);
+        return;
       }
     } catch (error) {
       showToast(error.message, true);
@@ -868,6 +993,108 @@ function bindSettings() {
   });
 }
 
+let _userOrdersUserId = null;
+
+function userOrderStatusText(status) {
+  if (status === "done") return "已完成";
+  if (status === "running") return "进行中";
+  return status;
+}
+
+function userOrderStatusClass(status) {
+  if (status === "done") return "enabled";
+  if (status === "running") return "pending";
+  return "";
+}
+
+async function openUserOrdersModal(userId) {
+  _userOrdersUserId = userId;
+  const user = state.users.find((u) => u.id === userId);
+  q("#userOrdersTitle").textContent = `${user ? user.account : "用户"} 的订单`;
+
+  q("#userOrdersTableBody").innerHTML = '<tr><td colspan="8" class="empty">加载中…</td></tr>';
+  q("#userOrdersSelectAll").checked = false;
+  q("#deleteSelectedOrdersBtn").disabled = true;
+  openModal("userOrdersModalBackdrop");
+
+  try {
+    const data = await apiRequest(`/api/admin/users/${userId}/orders`);
+    renderUserOrdersTable(data.orders || []);
+  } catch (error) {
+    q("#userOrdersTableBody").innerHTML = `<tr><td colspan="8" class="empty">${escapeHtml(error.message)}</td></tr>`;
+  }
+}
+
+function renderUserOrdersTable(orders) {
+  const body = q("#userOrdersTableBody");
+  if (!orders.length) {
+    body.innerHTML = '<tr><td colspan="8" class="empty">暂无订单</td></tr>';
+    return;
+  }
+
+  body.innerHTML = orders
+    .map((o) => `
+      <tr>
+        <td><input type="checkbox" class="user-order-check" data-oid="${o.id}" /></td>
+        <td>${escapeHtml(o.orderCode || "")}</td>
+        <td>${escapeHtml(o.productName || "")}</td>
+        <td>${formatMoney(o.amount)}</td>
+        <td>${formatMoney(o.profit)}</td>
+        <td><span class="status ${userOrderStatusClass(o.status)}">${userOrderStatusText(o.status)}</span></td>
+        <td>${escapeHtml(o.submittedAt || "")}</td>
+        <td>${escapeHtml(o.settleAt || "")}</td>
+      </tr>
+    `)
+    .join("");
+
+  syncDeleteBtnState();
+}
+
+function syncDeleteBtnState() {
+  const checked = qq(".user-order-check:checked");
+  q("#deleteSelectedOrdersBtn").disabled = !checked.length;
+}
+
+async function deleteSelectedOrders() {
+  const checked = qq(".user-order-check:checked");
+  const ids = [...checked].map((c) => c.dataset.oid);
+  if (!ids.length) return;
+  if (!confirm(`确认删除选中的 ${ids.length} 条订单？已完成订单的收益将被扣减，进行中订单将解冻。`)) return;
+
+  try {
+    await apiRequest(`/api/admin/users/${_userOrdersUserId}/delete-orders`, { method: "POST", body: { orderIds: ids } });
+    showToast(`成功删除 ${ids.length} 条订单`);
+    await loadAdminData();
+    await openUserOrdersModal(_userOrdersUserId);
+  } catch (error) {
+    showToast(error.message, true);
+  }
+}
+
+function bindUserOrdersModal() {
+  q("#closeUserOrdersModal").addEventListener("click", () => closeModal("userOrdersModalBackdrop"));
+  q("#cancelUserOrdersBtn").addEventListener("click", () => closeModal("userOrdersModalBackdrop"));
+  q("#userOrdersModalBackdrop").addEventListener("click", (e) => {
+    if (e.target.id === "userOrdersModalBackdrop") closeModal("userOrdersModalBackdrop");
+  });
+
+  q("#userOrdersSelectAll").addEventListener("change", (e) => {
+    qq(".user-order-check").forEach((cb) => { cb.checked = e.target.checked; });
+    syncDeleteBtnState();
+  });
+
+  q("#userOrdersTableBody").addEventListener("change", (e) => {
+    if (e.target.classList.contains("user-order-check")) {
+      const all = qq(".user-order-check");
+      const checked = qq(".user-order-check:checked");
+      q("#userOrdersSelectAll").checked = all.length > 0 && all.length === checked.length;
+      syncDeleteBtnState();
+    }
+  });
+
+  q("#deleteSelectedOrdersBtn").addEventListener("click", deleteSelectedOrders);
+}
+
 function bindEventsOnce() {
   if (hasBoundEvents) return;
   bindSectionSwitch();
@@ -881,6 +1108,9 @@ function bindEventsOnce() {
   bindOrderManage();
   bindAuditManage();
   bindSettings();
+  bindGenerateOrdersModal();
+  bindOrderGenDefaults();
+  bindUserOrdersModal();
   hasBoundEvents = true;
 }
 
@@ -889,6 +1119,7 @@ async function enterAdminApp() {
   q("#adminApp").classList.remove("hidden");
   bindEventsOnce();
   await loadAdminData();
+  await loadOrderGenDefaults();
   resetArticleForm();
   resetOrderForm();
   sectionSwitch("overview");

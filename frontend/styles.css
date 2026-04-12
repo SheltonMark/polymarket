@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   --bg: #eaf0fb;
   --bg-deep: #d8e4f7;
   --text: #10172b;
@@ -620,10 +620,46 @@ main {
   font-size: 1rem;
 }
 
+.chart-container {
+  position: relative;
+}
+
 #pnlChart {
   width: 100%;
   border-radius: var(--radius-md);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(238, 243, 255, 0.88));
+  cursor: crosshair;
+}
+
+.chart-tooltip {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  background: rgba(16, 23, 43, 0.88);
+  backdrop-filter: blur(8px);
+  color: #f0f4ff;
+  font-size: 12px;
+  line-height: 1.6;
+  padding: 8px 12px;
+  border-radius: 10px;
+  white-space: nowrap;
+  z-index: 20;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.chart-tooltip.visible {
+  opacity: 1;
+}
+
+.chart-tooltip .tt-profit {
+  color: #2fbf9f;
+  font-weight: 600;
+}
+
+.chart-tooltip .tt-label {
+  color: rgba(240, 244, 255, 0.6);
 }
 
 .order-list {

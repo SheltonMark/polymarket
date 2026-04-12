@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
@@ -51,7 +51,10 @@
         <button class="menu-btn active" data-section="overview">数据概览</button>
         <button class="menu-btn" data-section="home-manage">首页管理</button>
         <button class="menu-btn" data-section="user-manage">用户管理</button>
+        <button class="menu-btn" data-section="order-config">订单配置</button>
+        <!-- 订单管理菜单临时隐藏，保留代码，后续可随时放开
         <button class="menu-btn" data-section="order-manage">订单管理</button>
+        -->
         <button class="menu-btn" data-section="deposit-manage">充值管理</button>
         <button class="menu-btn" data-section="withdraw-manage">提现管理</button>
         <button class="menu-btn" data-section="agreement-manage">协议管理</button>
@@ -186,7 +189,7 @@
           <article class="card glass">
             <div class="card-head">
               <h3>用户管理</h3>
-              <span class="hint">支持余额手动加减与账号封禁/启用。</span>
+              <span class="hint">支持余额手动加减、账号封禁/启用、批量生成订单。</span>
             </div>
 
             <div class="table-wrap">
@@ -195,6 +198,7 @@
                   <tr>
                     <th>账号</th>
                     <th>展示名/联系方式</th>
+                    <th>本金</th>
                     <th>可用余额</th>
                     <th>冻结余额</th>
                     <th>状态</th>
@@ -205,6 +209,52 @@
                 <tbody id="userTableBody"></tbody>
               </table>
             </div>
+          </article>
+        </section>
+
+        <section class="section" id="order-config">
+          <article class="card glass">
+            <div class="card-head">
+              <h3>自动订单默认配置</h3>
+              <span class="hint">批量生成订单时的默认参数，可在生成弹窗中逐次覆盖。</span>
+            </div>
+            <form id="orderGenDefaultsForm" class="form-block">
+              <div class="field-row">
+                <div class="field">
+                  <label for="ogdFreezeMin">冻结时间最小值（小时）</label>
+                  <input id="ogdFreezeMin" type="number" min="1" step="1" required />
+                </div>
+                <div class="field">
+                  <label for="ogdFreezeMax">冻结时间最大值（小时）</label>
+                  <input id="ogdFreezeMax" type="number" min="1" step="1" required />
+                </div>
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label for="ogdRateMin">收益比例最小值（%）</label>
+                  <input id="ogdRateMin" type="number" min="0" step="0.01" required />
+                </div>
+                <div class="field">
+                  <label for="ogdRateMax">收益比例最大值（%）</label>
+                  <input id="ogdRateMax" type="number" min="0" step="0.01" required />
+                </div>
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label for="ogdTimeStart">订单时间起始</label>
+                  <input id="ogdTimeStart" type="datetime-local" step="60" required />
+                </div>
+                <div class="field">
+                  <label for="ogdTimeEnd">订单时间截止</label>
+                  <input id="ogdTimeEnd" type="datetime-local" step="60" required />
+                </div>
+              </div>
+              <div class="field">
+                <label for="ogdProjectPool">项目名池（每行一个）</label>
+                <textarea id="ogdProjectPool" rows="6"></textarea>
+              </div>
+              <button class="btn primary" type="submit">保存默认配置</button>
+            </form>
           </article>
         </section>
 
@@ -516,6 +566,100 @@
       </form>
     </div>
   </div>
+  <div class="modal-backdrop" id="generateOrdersModalBackdrop">
+    <div class="modal glass admin-editor-modal">
+      <div class="card-head">
+        <h3 id="generateOrdersTitle">批量生成订单</h3>
+        <button class="icon-btn" id="closeGenerateOrdersModal" aria-label="关闭">×</button>
+      </div>
+      <p class="hint" id="generateOrdersHint">为用户批量生成订单，总金额不得超过可用本金。</p>
+      <form id="generateOrdersForm" class="form-block">
+        <input type="hidden" id="genUserId" />
+        <div class="field-row">
+          <div class="field">
+            <label for="genTotalAmount">总金额</label>
+            <input id="genTotalAmount" type="number" min="0.01" step="0.01" required />
+          </div>
+          <div class="field">
+            <label for="genOrderCount">订单条数</label>
+            <input id="genOrderCount" type="number" min="1" step="1" value="5" required />
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="genFreezeMin">冻结时间最小值（小时）</label>
+            <input id="genFreezeMin" type="number" min="1" step="1" />
+          </div>
+          <div class="field">
+            <label for="genFreezeMax">冻结时间最大值（小时）</label>
+            <input id="genFreezeMax" type="number" min="1" step="1" />
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="genRateMin">收益比例最小值（%）</label>
+            <input id="genRateMin" type="number" min="0" step="0.01" />
+          </div>
+          <div class="field">
+            <label for="genRateMax">收益比例最大值（%）</label>
+            <input id="genRateMax" type="number" min="0" step="0.01" />
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="genTimeStart">订单时间起始</label>
+            <input id="genTimeStart" type="datetime-local" step="60" />
+          </div>
+          <div class="field">
+            <label for="genTimeEnd">订单时间截止</label>
+            <input id="genTimeEnd" type="datetime-local" step="60" />
+          </div>
+        </div>
+        <p class="hint">留空的参数将使用上方默认配置的值。</p>
+        <div class="row-actions">
+          <button class="btn primary" type="submit" id="genSubmitBtn">确认生成</button>
+          <button class="btn ghost" type="button" id="cancelGenerateOrdersBtn">取消</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="userOrdersModalBackdrop">
+    <div class="modal glass admin-editor-modal" style="max-width:860px;width:92vw;">
+      <div class="card-head">
+        <h3 id="userOrdersTitle">用户订单</h3>
+        <button class="icon-btn" id="closeUserOrdersModal" aria-label="关闭">×</button>
+      </div>
+      <p class="hint" id="userOrdersHint">查看与管理用户历史订单，可勾选多条后批量删除（已完成订单将扣减收益，进行中订单将解冻本金）。</p>
+      <div class="row-actions" style="margin-bottom:8px;gap:8px;">
+        <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:13px;">
+          <input type="checkbox" id="userOrdersSelectAll" /> 全选
+        </label>
+        <button class="btn danger" id="deleteSelectedOrdersBtn" disabled>删除选中</button>
+      </div>
+      <div class="table-wrap" style="max-height:55vh;overflow-y:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:36px;"></th>
+              <th>订单号</th>
+              <th>项目名</th>
+              <th>金额</th>
+              <th>收益</th>
+              <th>状态</th>
+              <th>提交时间</th>
+              <th>结算时间</th>
+            </tr>
+          </thead>
+          <tbody id="userOrdersTableBody"></tbody>
+        </table>
+      </div>
+      <div class="row-actions" style="margin-top:12px;">
+        <button class="btn ghost" type="button" id="cancelUserOrdersBtn">关闭</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
   <script src="/admin/app.js"></script>
 </body>

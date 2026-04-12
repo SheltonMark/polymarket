@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   --bg-base: #e9f0fc;
   --bg-shade: #dbe6fa;
   --bg-dark: #c9d9f7;
@@ -546,7 +546,7 @@ tbody tr:hover {
   transform: translateX(-50%) translateY(20px);
   opacity: 0;
   pointer-events: none;
-  z-index: 60;
+  z-index: 999;
   background: rgba(23, 35, 67, 0.92);
   color: #fff;
   border-radius: 12px;

@@ -1,4 +1,4 @@
-﻿const API_BASE = "";
+const API_BASE = "";
 const USER_TOKEN_KEY = "lockpro_user_token";
 
 const state = {
@@ -412,7 +412,7 @@ function toTimestamp(value, fallback = Date.now()) {
 function buildChartSeriesFromOrders() {
   const now = Date.now();
   const base = Math.max(0, walletTotal() - state.wallet.totalProfit);
-  const points = [{ ts: now - 24 * 60 * 60 * 1000, value: base }];
+  const points = [{ ts: now - 24 * 60 * 60 * 1000, value: base, profit: 0, productName: "", isAnchor: true }];
 
   const doneOrders = [...state.orderHistory]
     .filter((item) => item.status === "done")
@@ -421,11 +421,18 @@ function buildChartSeriesFromOrders() {
 
   let runningValue = base;
   doneOrders.forEach((order) => {
-    runningValue += Number(order.profit || 0);
-    points.push({ ts: order.settleTs, value: Number(runningValue.toFixed(2)) });
+    const profit = Number(order.profit || 0);
+    runningValue += profit;
+    points.push({
+      ts: order.settleTs,
+      value: Number(runningValue.toFixed(2)),
+      profit,
+      productName: order.productName || "",
+      isAnchor: false,
+    });
   });
 
-  points.push({ ts: now, value: walletTotal() });
+  points.push({ ts: now, value: walletTotal(), profit: 0, productName: "", isAnchor: true });
   state.chartSeries = points;
 }
 
@@ -462,6 +469,30 @@ function getDoneOrdersByRange(range) {
   return orders.sort((a, b) => a.settleTs - b.settleTs);
 }
 
+function dayKey(ts) {
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function aggregateByDay(points) {
+  if (points.length <= 2) return points;
+  const groups = new Map();
+  points.forEach((p) => {
+    const key = dayKey(p.ts);
+    if (!groups.has(key)) {
+      groups.set(key, { ts: p.ts, value: p.value, dayProfit: 0, dayCount: 0, date: key });
+    }
+    const g = groups.get(key);
+    g.ts = Math.max(g.ts, p.ts);
+    g.value = p.value;
+    if (!p.isAnchor && p.profit) {
+      g.dayProfit = Number((g.dayProfit + p.profit).toFixed(2));
+      g.dayCount += 1;
+    }
+  });
+  return Array.from(groups.values()).sort((a, b) => a.ts - b.ts);
+}
+
 function getSeriesByRange(range) {
   const now = Date.now();
   const durations = {
@@ -478,12 +509,18 @@ function getSeriesByRange(range) {
   }
 
   if (data.length < 2) {
-    const latest = state.chartSeries[state.chartSeries.length - 1] || { ts: now, value: walletTotal() };
-    data = [{ ts: latest.ts - 1, value: latest.value }, latest];
+    const latest = state.chartSeries[state.chartSeries.length - 1] || { ts: now, value: walletTotal(), profit: 0, productName: "", isAnchor: true };
+    data = [{ ...latest, ts: latest.ts - 1 }, latest];
   }
 
-  const maxByRange = { day: 32, week: 46, month: 64, all: 90 };
-  return downSample(data, maxByRange[range] || 64);
+  if (range === "day") {
+    const maxByRange = { day: 48 };
+    return downSample(data, maxByRange.day);
+  }
+
+  const aggregated = aggregateByDay(data);
+  const maxByRange = { week: 46, month: 64, all: 90 };
+  return downSample(aggregated, maxByRange[range] || 64);
 }
 
 function updateTopAuthButton() {
@@ -533,6 +570,28 @@ function updateRangeStats(series) {
   q("#rangeLow").textContent = latestSettle ? formatDateText(latestSettle) : "--";
 }
 
+let chartState = { data: [], points: [], width: 0, height: 0, padX: 24, padY: 28 };
+
+function buildSmoothPath(ctx, pts) {
+  ctx.moveTo(pts[0].x, pts[0].y);
+  if (pts.length === 2) {
+    ctx.lineTo(pts[1].x, pts[1].y);
+    return;
+  }
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[Math.max(0, i - 1)];
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const p3 = pts[Math.min(pts.length - 1, i + 2)];
+    const tension = 0.35;
+    const cp1x = p1.x + (p2.x - p0.x) * tension;
+    const cp1y = p1.y + (p2.y - p0.y) * tension;
+    const cp2x = p2.x - (p3.x - p1.x) * tension;
+    const cp2y = p2.y - (p3.y - p1.y) * tension;
+    ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+  }
+}
+
 function drawPnlChart() {
   const canvas = q("#pnlChart");
   if (!canvas) return;
@@ -555,10 +614,13 @@ function drawPnlChart() {
   updateRangeStats(data);
 
   const values = data.map((d) => d.value);
-  const min = Math.min(...values);
-  const max = Math.max(...values);
+  const rawMin = Math.min(...values);
+  const rawMax = Math.max(...values);
+  const margin = (rawMax - rawMin || 1) * 0.12;
+  const min = rawMin - margin;
+  const max = rawMax + margin;
   const padX = 24;
-  const padY = 24;
+  const padY = 28;
   const drawW = width - padX * 2;
   const drawH = height - padY * 2;
 
@@ -568,43 +630,215 @@ function drawPnlChart() {
     return padY + (1 - ratio) * drawH;
   };
 
-  ctx.strokeStyle = "rgba(76, 117, 255, 0.22)";
+  const gridLines = 4;
+  ctx.strokeStyle = "rgba(76, 117, 255, 0.10)";
   ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(padX, height - padY);
-  ctx.lineTo(width - padX, height - padY);
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.moveTo(toX(0), toY(data[0].value));
-  for (let i = 1; i < data.length; i += 1) {
-    const x = toX(i);
-    const prevY = toY(data[i - 1].value);
-    const currentY = toY(data[i].value);
-    ctx.lineTo(x, prevY);
-    ctx.lineTo(x, currentY);
+  for (let i = 0; i <= gridLines; i++) {
+    const gy = padY + (i / gridLines) * drawH;
+    ctx.beginPath();
+    ctx.moveTo(padX, gy);
+    ctx.lineTo(width - padX, gy);
+    ctx.stroke();
   }
-  ctx.lineWidth = 2.6;
+
+  const points = data.map((d, i) => ({ x: toX(i), y: toY(d.value) }));
+
+  ctx.save();
+  ctx.beginPath();
+  buildSmoothPath(ctx, points);
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = "rgba(47, 191, 159, 0.18)";
+  ctx.filter = "blur(4px)";
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.beginPath();
+  buildSmoothPath(ctx, points);
+  ctx.lineWidth = 2.4;
   ctx.strokeStyle = "#2fbf9f";
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
   ctx.stroke();
 
-  const gradient = ctx.createLinearGradient(0, padY, 0, height - padY);
-  gradient.addColorStop(0, "rgba(47, 191, 159, 0.28)");
-  gradient.addColorStop(1, "rgba(47, 191, 159, 0)");
-
-  ctx.lineTo(toX(data.length - 1), height - padY);
-  ctx.lineTo(toX(0), height - padY);
+  ctx.beginPath();
+  buildSmoothPath(ctx, points);
+  const lastPt = points[points.length - 1];
+  ctx.lineTo(lastPt.x, height - padY);
+  ctx.lineTo(points[0].x, height - padY);
   ctx.closePath();
+  const gradient = ctx.createLinearGradient(0, padY, 0, height - padY);
+  gradient.addColorStop(0, "rgba(47, 191, 159, 0.22)");
+  gradient.addColorStop(0.6, "rgba(47, 191, 159, 0.08)");
+  gradient.addColorStop(1, "rgba(47, 191, 159, 0)");
   ctx.fillStyle = gradient;
   ctx.fill();
 
-  const last = data[data.length - 1];
-  const lx = toX(data.length - 1);
-  const ly = toY(last.value);
+  if (state.activeRange === "day") {
+    data.forEach((d, i) => {
+      if (d.isAnchor || !d.profit) return;
+      const px = points[i].x;
+      const py = points[i].y;
+      ctx.beginPath();
+      ctx.arc(px, py, 3, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(47, 191, 159, 0.35)";
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(px, py, 1.8, 0, Math.PI * 2);
+      ctx.fillStyle = "#2fbf9f";
+      ctx.fill();
+    });
+  }
+
   ctx.beginPath();
-  ctx.arc(lx, ly, 4, 0, Math.PI * 2);
+  ctx.arc(lastPt.x, lastPt.y, 7, 0, Math.PI * 2);
+  ctx.fillStyle = "rgba(47, 191, 159, 0.15)";
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(lastPt.x, lastPt.y, 3.5, 0, Math.PI * 2);
   ctx.fillStyle = "#2fbf9f";
   ctx.fill();
+  ctx.beginPath();
+  ctx.arc(lastPt.x, lastPt.y, 1.8, 0, Math.PI * 2);
+  ctx.fillStyle = "#fff";
+  ctx.fill();
+
+  chartState = { data, points, width, height, padX, padY };
+}
+
+function formatTimeShort(ts) {
+  const d = new Date(ts);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+function formatDateShort(ts) {
+  const d = new Date(ts);
+  return `${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function drawCrosshair(canvas, idx) {
+  const { points, data, height, padY } = chartState;
+  if (!points.length || idx < 0 || idx >= points.length) return;
+
+  const ctx = canvas.getContext("2d");
+  const dpr = window.devicePixelRatio || 1;
+  const pt = points[idx];
+
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.scale(dpr, dpr);
+
+  ctx.setLineDash([4, 4]);
+  ctx.strokeStyle = "rgba(47, 191, 159, 0.4)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(pt.x, padY);
+  ctx.lineTo(pt.x, height - padY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.beginPath();
+  ctx.arc(pt.x, pt.y, 5, 0, Math.PI * 2);
+  ctx.fillStyle = "rgba(47, 191, 159, 0.25)";
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(pt.x, pt.y, 3, 0, Math.PI * 2);
+  ctx.fillStyle = "#2fbf9f";
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function showChartTooltip(canvas, idx) {
+  const tooltip = q("#chartTooltip");
+  if (!tooltip) return;
+  const { data, points } = chartState;
+  if (!points.length || idx < 0 || idx >= points.length) {
+    tooltip.classList.remove("visible");
+    return;
+  }
+
+  const d = data[idx];
+  const pt = points[idx];
+  const isDay = state.activeRange === "day";
+
+  let html = "";
+  if (isDay) {
+    if (d.isAnchor || !d.profit) {
+      html = `<div><span class="tt-label">${formatTimeShort(d.ts)}</span> 总资产 ${money(d.value)}</div>`;
+    } else {
+      html = `<div><strong>${d.productName}</strong></div>`
+        + `<div><span class="tt-profit">+${money(d.profit)}</span></div>`
+        + `<div><span class="tt-label">${formatTimeShort(d.ts)}</span> · 总资产 ${money(d.value)}</div>`;
+    }
+  } else {
+    const dayProfit = d.dayProfit || 0;
+    const dayCount = d.dayCount || 0;
+    const dateLabel = d.date || formatDateShort(d.ts);
+    if (dayCount > 0) {
+      html = `<div><strong>${dateLabel}</strong></div>`
+        + `<div>当日收益 <span class="tt-profit">+${money(dayProfit)}</span></div>`
+        + `<div><span class="tt-label">${dayCount} 笔结算 · 总资产 ${money(d.value)}</span></div>`;
+    } else {
+      html = `<div><strong>${dateLabel}</strong></div>`
+        + `<div><span class="tt-label">总资产 ${money(d.value)}</span></div>`;
+    }
+  }
+
+  tooltip.innerHTML = html;
+  tooltip.classList.add("visible");
+
+  const canvasRect = canvas.getBoundingClientRect();
+  const containerRect = canvas.parentElement.getBoundingClientRect();
+  const tipW = tooltip.offsetWidth;
+  const tipH = tooltip.offsetHeight;
+  const scaleX = canvasRect.width / chartState.width;
+  const scaleY = canvasRect.height / chartState.height;
+
+  let left = pt.x * scaleX + (canvasRect.left - containerRect.left) + 12;
+  let top = pt.y * scaleY + (canvasRect.top - containerRect.top) - tipH - 8;
+
+  if (left + tipW > containerRect.width - 8) {
+    left = pt.x * scaleX + (canvasRect.left - containerRect.left) - tipW - 12;
+  }
+  if (top < 0) {
+    top = pt.y * scaleY + (canvasRect.top - containerRect.top) + 12;
+  }
+
+  tooltip.style.left = `${left}px`;
+  tooltip.style.top = `${top}px`;
+}
+
+function initChartInteraction() {
+  const canvas = q("#pnlChart");
+  if (!canvas) return;
+
+  canvas.addEventListener("mousemove", (e) => {
+    const { points, width } = chartState;
+    if (!points.length) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = ((e.clientX - rect.left) / rect.width) * width;
+
+    let closest = 0;
+    let closestDist = Infinity;
+    points.forEach((pt, i) => {
+      const dist = Math.abs(pt.x - mouseX);
+      if (dist < closestDist) {
+        closestDist = dist;
+        closest = i;
+      }
+    });
+
+    drawPnlChart();
+    drawCrosshair(canvas, closest);
+    showChartTooltip(canvas, closest);
+  });
+
+  canvas.addEventListener("mouseleave", () => {
+    drawPnlChart();
+    const tooltip = q("#chartTooltip");
+    if (tooltip) tooltip.classList.remove("visible");
+  });
 }
 
 function renderProductCard(product, compact = false) {
@@ -645,6 +879,7 @@ function bindInvestButtons(scopeRoot = document) {
 
 function renderAllProductsList() {
   const root = q("#allProductsList");
+  if (!root) return;
   root.innerHTML = "";
   if (!state.products.length) {
     root.innerHTML = '<div class="order-item">暂无可用订单</div>';
@@ -662,6 +897,7 @@ function renderAllProductsList() {
 
 function renderOrderProducts() {
   const root = q("#orderList");
+  if (!root) { renderAllProductsList(); return; }
   root.innerHTML = "";
 
   const preview = state.products.slice(0, state.orderPreviewLimit);
@@ -1143,9 +1379,9 @@ function initOrderModal() {
 }
 
 function initProductsModal() {
-  q("#viewAllProductsBtn").addEventListener("click", openProductsModal);
-  q("#closeProductsModal").addEventListener("click", closeProductsModal);
-  q("#productsModalBackdrop").addEventListener("click", (event) => {
+  q("#viewAllProductsBtn")?.addEventListener("click", openProductsModal);
+  q("#closeProductsModal")?.addEventListener("click", closeProductsModal);
+  q("#productsModalBackdrop")?.addEventListener("click", (event) => {
     if (event.target.id === "productsModalBackdrop") closeProductsModal();
   });
 }
@@ -1206,6 +1442,7 @@ async function init() {
   initRecordSwitch();
   initAuth();
   initSettleControls();
+  initChartInteraction();
 
   await loadSiteConfig();
   await loadProducts();

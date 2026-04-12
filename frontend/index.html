@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
@@ -95,7 +95,7 @@
           </article>
         </div>
 
-        <div class="trade-grid">
+        <div class="trade-grid" style="grid-template-columns:1fr;">
           <article class="card glass pnl-card">
             <div class="card-head">
               <h3>收益曲线</h3>
@@ -108,7 +108,10 @@
               </div>
             </div>
 
-            <canvas id="pnlChart" width="760" height="280" aria-label="收益曲线图"></canvas>
+            <div class="chart-container" id="chartContainer">
+              <canvas id="pnlChart" width="760" height="280" aria-label="收益曲线图"></canvas>
+              <div class="chart-tooltip" id="chartTooltip"></div>
+            </div>
 
             <div class="stats-row">
               <div class="stat-chip">
@@ -126,6 +129,7 @@
             </div>
           </article>
 
+          <!-- 订单簿区域临时隐藏，保留代码，后续可随时放开
           <article class="card glass orders-card">
             <div class="card-head">
               <h3>订单簿</h3>
@@ -135,6 +139,7 @@
             </div>
             <div class="order-list" id="orderList"></div>
           </article>
+          -->
         </div>
 
         <article class="card glass history-card">
@@ -151,7 +156,7 @@
                   <th>金额</th>
                   <th>收益</th>
                   <th>状态</th>
-                  <th>提交时间</th>
+                  <th>订单时间</th>
                 </tr>
               </thead>
               <tbody id="orderHistoryBody"></tbody>

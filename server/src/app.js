@@ -1,4 +1,4 @@
-﻿import fs from "node:fs";
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import bcrypt from "bcryptjs";
@@ -288,6 +288,7 @@ async function getAdminState() {
             username AS account,
             profile,
             available_balance AS available,
+            principal_available AS principalAvailable,
             frozen_balance AS frozen,
             status,
             created_at AS createdAt
@@ -342,7 +343,7 @@ async function getAdminState() {
       description: home?.description || "",
     },
     agreementText: agreement?.content || "",
-    users: users.map((item) => ({ ...item, available: round2(item.available), frozen: round2(item.frozen) })),
+    users: users.map((item) => ({ ...item, available: round2(item.available), principalAvailable: round2(item.principalAvailable), frozen: round2(item.frozen) })),
     articles: articles.map((item) => ({ ...item, hot: Boolean(item.hot) })),
     orders: orders.map((item) => ({
       ...item,
@@ -861,6 +862,103 @@ app.post("/api/admin/users/:id/balance", requireAdmin, async (req, res) => {
   res.json({ ok: true });
 });
 
+app.get("/api/admin/users/:id/orders", requireAdmin, async (req, res) => {
+  const userId = req.params.id;
+  const user = await db.get("SELECT id, username FROM users WHERE id = ?", [userId]);
+  if (!user) {
+    res.status(404).json({ message: "用户不存在" });
+    return;
+  }
+
+  const orders = await db.all(
+    `SELECT id, order_code AS orderCode, product_name AS productName,
+            amount, profit, status, submitted_at AS submittedAt,
+            settle_at AS settleAt
+     FROM user_orders
+     WHERE user_id = ?
+     ORDER BY submitted_at DESC`,
+    [userId]
+  );
+
+  res.json({ username: user.username, orders });
+});
+
+app.post("/api/admin/users/:id/delete-orders", requireAdmin, async (req, res) => {
+  const userId = req.params.id;
+  const orderIds = Array.isArray(req.body.orderIds) ? req.body.orderIds : [];
+
+  if (!orderIds.length) {
+    res.status(400).json({ message: "请选择要删除的订单" });
+    return;
+  }
+
+  const user = await db.get("SELECT id, username FROM users WHERE id = ?", [userId]);
+  if (!user) {
+    res.status(404).json({ message: "用户不存在" });
+    return;
+  }
+
+  const placeholders = orderIds.map(() => "?").join(",");
+  const orders = await db.all(
+    `SELECT id, amount, profit, status FROM user_orders WHERE id IN (${placeholders}) AND user_id = ?`,
+    [...orderIds, userId]
+  );
+
+  if (!orders.length) {
+    res.status(404).json({ message: "未找到符合条件的订单" });
+    return;
+  }
+
+  let frozenDelta = 0;
+  let principalDelta = 0;
+  let availableAdd = 0;
+  let profitDelta = 0;
+
+  for (const order of orders) {
+    if (order.status === "running") {
+      frozenDelta += Number(order.amount);
+      principalDelta += Number(order.amount);
+      availableAdd += Number(order.amount);
+    } else if (order.status === "done") {
+      profitDelta += Number(order.profit);
+    }
+  }
+
+  frozenDelta = round2(frozenDelta);
+  principalDelta = round2(principalDelta);
+  availableAdd = round2(availableAdd);
+  profitDelta = round2(profitDelta);
+
+  const nowText = getNowString();
+  const matchedIds = orders.map((o) => o.id);
+  const delPlaceholders = matchedIds.map(() => "?").join(",");
+
+  await db.exec("BEGIN TRANSACTION");
+  try {
+    await db.run(`DELETE FROM user_orders WHERE id IN (${delPlaceholders})`, matchedIds);
+
+    await db.run(
+      `UPDATE users
+       SET available_balance  = MAX(available_balance + ? - ?, 0),
+           principal_available = MAX(principal_available + ?, 0),
+           frozen_balance     = MAX(frozen_balance - ?, 0),
+           profit_available   = MAX(profit_available - ?, 0),
+           total_profit       = MAX(total_profit - ?, 0),
+           updated_at = ?
+       WHERE id = ?`,
+      [availableAdd, profitDelta, principalDelta, frozenDelta, profitDelta, profitDelta, nowText, userId]
+    );
+
+    await db.exec("COMMIT");
+  } catch (error) {
+    await db.exec("ROLLBACK");
+    throw error;
+  }
+
+  await addActivity(`管理员删除用户 ${user.username} 的 ${orders.length} 笔订单，回退冻结 $${frozenDelta.toFixed(2)}，扣减收益 $${profitDelta.toFixed(2)}。`);
+  res.json({ ok: true, deleted: orders.length });
+});
+
 app.post("/api/admin/users/:id/toggle", requireAdmin, async (req, res) => {
   const userId = req.params.id;
   const user = await db.get("SELECT id, username, status FROM users WHERE id = ?", [userId]);
@@ -1105,6 +1203,216 @@ app.post("/api/admin/withdrawals/:id/reject", requireAdmin, async (req, res) => 
   await db.run("UPDATE withdrawals SET status = 'rejected', reason = ?, processed_at = ? WHERE id = ? AND status = 'pending'", [reason, getNowString(), recordId]);
   await addActivity(`提现申请 ${recordId} 已驳回。`);
   res.json({ ok: true });
+});
+
+app.get("/api/admin/order-generation-defaults", requireAdmin, async (_req, res) => {
+  const row = await db.get("SELECT * FROM order_generation_defaults WHERE id = 1");
+  if (!row) {
+    res.json({ freezeMin: 1, freezeMax: 4, rateMin: 2, rateMax: 4.5, timeStart: "", timeEnd: "", projectPool: [] });
+    return;
+  }
+  let pool = [];
+  try { pool = JSON.parse(row.project_pool); } catch { pool = []; }
+  res.json({
+    freezeMin: row.freeze_min,
+    freezeMax: row.freeze_max,
+    rateMin: row.rate_min,
+    rateMax: row.rate_max,
+    timeStart: row.time_start,
+    timeEnd: row.time_end,
+    projectPool: pool,
+  });
+});
+
+app.put("/api/admin/order-generation-defaults", requireAdmin, async (req, res) => {
+  const freezeMin = Number(req.body.freezeMin || 0);
+  const freezeMax = Number(req.body.freezeMax || 0);
+  const rateMin = Number(req.body.rateMin || 0);
+  const rateMax = Number(req.body.rateMax || 0);
+  const timeStart = safeString(req.body.timeStart);
+  const timeEnd = safeString(req.body.timeEnd);
+  const projectPool = Array.isArray(req.body.projectPool) ? req.body.projectPool : [];
+
+  if (freezeMin <= 0 || freezeMax <= 0 || freezeMin > freezeMax) {
+    res.status(400).json({ message: "冻结时间区间不合法" });
+    return;
+  }
+  if (rateMin < 0 || rateMax < 0 || rateMin > rateMax) {
+    res.status(400).json({ message: "收益比例区间不合法" });
+    return;
+  }
+  if (!timeStart || !timeEnd) {
+    res.status(400).json({ message: "时间区间不能为空" });
+    return;
+  }
+
+  await db.run(
+    `UPDATE order_generation_defaults
+     SET freeze_min = ?, freeze_max = ?, rate_min = ?, rate_max = ?,
+         time_start = ?, time_end = ?, project_pool = ?, updated_at = ?
+     WHERE id = 1`,
+    [freezeMin, freezeMax, rateMin, rateMax, timeStart, timeEnd, JSON.stringify(projectPool), getNowString()]
+  );
+
+  await addActivity("自动订单默认配置已更新。");
+  res.json({ ok: true });
+});
+
+app.post("/api/admin/users/:id/generate-orders", requireAdmin, async (req, res) => {
+  const userId = req.params.id;
+  const totalAmount = round2(req.body.totalAmount);
+  const orderCount = Math.max(1, Math.floor(Number(req.body.orderCount) || 1));
+
+  if (totalAmount <= 0) {
+    res.status(400).json({ message: "总金额必须大于 0" });
+    return;
+  }
+
+  const user = await db.get("SELECT * FROM users WHERE id = ?", [userId]);
+  if (!user) {
+    res.status(404).json({ message: "用户不存在" });
+    return;
+  }
+  if (totalAmount > Number(user.principal_available)) {
+    res.status(400).json({ message: `可用本金不足，当前本金 $${round2(user.principal_available).toFixed(2)}` });
+    return;
+  }
+
+  const defaults = await db.get("SELECT * FROM order_generation_defaults WHERE id = 1");
+  const freezeMin = Number(req.body.freezeMin ?? defaults?.freeze_min ?? 1);
+  const freezeMax = Number(req.body.freezeMax ?? defaults?.freeze_max ?? 4);
+  const rateMin = Number(req.body.rateMin ?? defaults?.rate_min ?? 2);
+  const rateMax = Number(req.body.rateMax ?? defaults?.rate_max ?? 4.5);
+  const timeStart = safeString(req.body.timeStart) || defaults?.time_start || "";
+  const timeEnd = safeString(req.body.timeEnd) || defaults?.time_end || "";
+
+  let projectPool = [];
+  if (Array.isArray(req.body.projectPool) && req.body.projectPool.length > 0) {
+    projectPool = req.body.projectPool;
+  } else {
+    try { projectPool = JSON.parse(defaults?.project_pool || "[]"); } catch { projectPool = []; }
+  }
+  if (!projectPool.length) {
+    projectPool = ["Value Matrix", "Signal Harbor", "Nova Grid", "Apex Flow", "Orion Pulse"];
+  }
+
+  if (!timeStart || !timeEnd) {
+    res.status(400).json({ message: "订单时间区间不能为空" });
+    return;
+  }
+
+  const tsStart = new Date(timeStart.replace(" ", "T")).getTime();
+  const tsEnd = new Date(timeEnd.replace(" ", "T")).getTime();
+  if (!Number.isFinite(tsStart) || !Number.isFinite(tsEnd) || tsStart > tsEnd) {
+    res.status(400).json({ message: "订单时间区间不合法" });
+    return;
+  }
+
+  const totalCents = Math.round(totalAmount * 100);
+  const amounts = [];
+  let remaining = totalCents;
+  for (let i = 0; i < orderCount - 1; i++) {
+    const avgRemaining = remaining / (orderCount - i);
+    const lo = Math.max(1, Math.floor(avgRemaining * 0.5));
+    const hi = Math.min(remaining - (orderCount - i - 1), Math.ceil(avgRemaining * 1.5));
+    const cents = Math.floor(Math.random() * (hi - lo + 1)) + lo;
+    amounts.push(cents);
+    remaining -= cents;
+  }
+  amounts.push(remaining);
+
+  const now = Date.now();
+  const nowText = getNowString();
+
+  let totalFrozen = 0;
+  let totalReleasedPrincipal = 0;
+  let totalProfitEarned = 0;
+
+  const orders = amounts.map((cents) => {
+    const amount = round2(cents / 100);
+    const orderTime = new Date(tsStart + Math.random() * (tsEnd - tsStart));
+    const freezeHours = freezeMin + Math.random() * (freezeMax - freezeMin);
+    const settleTime = new Date(orderTime.getTime() + freezeHours * 3600000);
+    const rate = rateMin + Math.random() * (rateMax - rateMin);
+    const profit = round2(amount * (rate / 100));
+    const projectName = projectPool[Math.floor(Math.random() * projectPool.length)];
+    const isDone = settleTime.getTime() <= now;
+
+    const fmt = (d) => {
+      const yy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      const hh = String(d.getHours()).padStart(2, "0");
+      const mi = String(d.getMinutes()).padStart(2, "0");
+      const ss = String(d.getSeconds()).padStart(2, "0");
+      return `${yy}-${mm}-${dd} ${hh}:${mi}:${ss}`;
+    };
+
+    if (isDone) {
+      totalReleasedPrincipal += amount;
+      totalProfitEarned += profit;
+    } else {
+      totalFrozen += amount;
+    }
+
+    return {
+      id: newId("uo"),
+      orderCode: makeOrderCode(),
+      productName: projectName,
+      amount,
+      profit: isDone ? profit : 0,
+      status: isDone ? "done" : "running",
+      submittedAt: fmt(orderTime),
+      settleAt: fmt(settleTime),
+      minRate: rateMin,
+      maxRate: rateMax,
+    };
+  });
+
+  totalFrozen = round2(totalFrozen);
+  totalReleasedPrincipal = round2(totalReleasedPrincipal);
+  totalProfitEarned = round2(totalProfitEarned);
+
+  await db.exec("BEGIN TRANSACTION");
+  try {
+    for (const order of orders) {
+      await db.run(
+        `INSERT INTO user_orders (
+          id, user_id, template_id, order_code, product_name,
+          amount, profit, status, submitted_at, settle_at,
+          min_rate, max_rate, updated_at
+        ) VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [order.id, userId, order.orderCode, order.productName,
+         order.amount, order.profit, order.status, order.submittedAt,
+         order.settleAt, order.minRate, order.maxRate, nowText]
+      );
+    }
+
+    await db.run(
+      `UPDATE users
+       SET available_balance = available_balance - ? + ?,
+           principal_available = principal_available - ? + ?,
+           frozen_balance = frozen_balance + ?,
+           profit_available = profit_available + ?,
+           total_profit = total_profit + ?,
+           updated_at = ?
+       WHERE id = ?`,
+      [totalAmount, round2(totalReleasedPrincipal + totalProfitEarned),
+       totalAmount, totalReleasedPrincipal, totalFrozen,
+       totalProfitEarned, totalProfitEarned,
+       nowText, userId]
+    );
+
+    await db.exec("COMMIT");
+  } catch (error) {
+    await db.exec("ROLLBACK");
+    throw error;
+  }
+
+  const doneCount = orders.filter((o) => o.status === "done").length;
+  const runningCount = orders.filter((o) => o.status === "running").length;
+  await addActivity(`管理员为用户 ${user.username} 批量生成 ${orders.length} 笔订单（已完成${doneCount}笔，进行中${runningCount}笔），总金额 $${totalAmount.toFixed(2)}。`);
+  res.json({ ok: true, generated: orders.length, doneCount, runningCount });
 });
 
 app.put("/api/admin/agreement", requireAdmin, async (req, res) => {
