@@ -332,19 +332,27 @@ h3 {
 
 .balance-direction-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px 20px;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 24px;
   margin-top: 6px;
 }
 
-.balance-dir-option {
-  display: inline-flex;
+label.balance-dir-option {
+  display: inline-flex !important;
+  flex-direction: row;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   cursor: pointer;
   font-size: 0.88rem;
   font-weight: 600;
   color: var(--text-main);
+  white-space: nowrap;
+  writing-mode: horizontal-tb;
+  margin-bottom: 0;
+  width: auto;
+  max-width: none;
 }
 
 .field-label {
