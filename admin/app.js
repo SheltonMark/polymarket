@@ -211,11 +211,11 @@ function renderUserTable() {
           <td>${escapeHtml(user.createdAt)}</td>
           <td>
             <div class="cell-actions">
-              <button class="btn success sm" data-user-action="balance" data-id="${user.id}">调整本金</button>
-              <button class="btn primary sm" data-user-action="generate" data-id="${user.id}">生成订单</button>
-              <button class="btn sm" data-user-action="viewOrders" data-id="${user.id}" style="background:#6366f1;color:#fff;">查看订单</button>
-              <button class="btn ghost sm" data-user-action="resetPassword" data-id="${user.id}">重置密码</button>
-              <button class="btn ghost sm" data-user-action="toggle" data-id="${user.id}">${user.status === "enabled" ? "封禁" : "启用"}</button>
+              <button class="btn sm user-act user-act--balance" data-user-action="balance" data-id="${user.id}">调整本金</button>
+              <button class="btn sm user-act user-act--generate" data-user-action="generate" data-id="${user.id}">生成订单</button>
+              <button class="btn sm user-act user-act--orders" data-user-action="viewOrders" data-id="${user.id}">查看订单</button>
+              <button class="btn sm user-act user-act--password" data-user-action="resetPassword" data-id="${user.id}">重置密码</button>
+              <button class="btn sm user-act ${user.status === "enabled" ? "user-act--ban" : "user-act--enable"}" data-user-action="toggle" data-id="${user.id}">${user.status === "enabled" ? "封禁" : "启用"}</button>
             </div>
           </td>
         </tr>
