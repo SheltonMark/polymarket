@@ -4,7 +4,7 @@ const ADMIN_TOKEN_KEY = "lockpro_admin_token";
 const SECTION_META = {
   overview: { title: "数据概览", desc: "查看用户、资金、订单与内容的核心数据。" },
   "home-manage": { title: "首页管理", desc: "配置首页标题与文章内容。" },
-  "user-manage": { title: "用户管理", desc: "查看用户信息并执行余额加减与账号状态管理。" },
+  "user-manage": { title: "用户管理", desc: "查看用户信息，调整本金、订单与账号状态。" },
   "order-config": { title: "订单配置", desc: "配置批量生成订单的默认参数（冻结、收益、时间、项目名）。" },
   "order-manage": { title: "订单管理", desc: "配置订单模板状态与归档。" },
   "deposit-manage": { title: "充值管理", desc: "审核用户充值申请，支持通过或驳回。" },
@@ -211,8 +211,7 @@ function renderUserTable() {
           <td>${escapeHtml(user.createdAt)}</td>
           <td>
             <div class="cell-actions">
-              <button class="btn success sm" data-user-action="add" data-id="${user.id}">加余额</button>
-              <button class="btn danger sm" data-user-action="sub" data-id="${user.id}">减余额</button>
+              <button class="btn success sm" data-user-action="balance" data-id="${user.id}">调整本金</button>
               <button class="btn primary sm" data-user-action="generate" data-id="${user.id}">生成订单</button>
               <button class="btn sm" data-user-action="viewOrders" data-id="${user.id}" style="background:#6366f1;color:#fff;">查看订单</button>
               <button class="btn ghost sm" data-user-action="resetPassword" data-id="${user.id}">重置密码</button>
@@ -481,13 +480,22 @@ function closeModal(modalId) {
   q(`#${modalId}`)?.classList.remove("open");
 }
 
-function openBalanceAdjustModal({ userId, direction, account }) {
+function syncBalanceAdjustModalUi() {
+  const account = q("#balanceAdjustAccount").value || "未知用户";
+  const direction = qq('input[name="balanceDirectionRadio"]').find((r) => r.checked)?.value || "add";
   const isAdd = direction === "add";
-  q("#balanceUserId").value = userId;
-  q("#balanceDirection").value = direction;
   q("#balanceAdjustTitle").textContent = isAdd ? "增加充值本金" : "减少充值本金";
-  q("#balanceAdjustHint").textContent = `目标用户：${account}，请输入本次${isAdd ? "增加" : "减少"}的本金金额。`;
+  q("#balanceAdjustHint").textContent = `目标用户：${account}，请选择调整方式并输入金额。`;
   q("#balanceAdjustSubmitBtn").textContent = isAdd ? "确认增加本金" : "确认减少本金";
+}
+
+function openBalanceAdjustModal({ userId, account }) {
+  q("#balanceUserId").value = userId;
+  q("#balanceAdjustAccount").value = account;
+  qq('input[name="balanceDirectionRadio"]').forEach((r) => {
+    r.checked = r.value === "add";
+  });
+  syncBalanceAdjustModalUi();
   q("#balanceAmountInput").value = "100";
   openModal("balanceAdjustModalBackdrop");
   q("#balanceAmountInput").focus();
@@ -535,10 +543,14 @@ function bindActionInputModals() {
     if (event.target.id === "balanceAdjustModalBackdrop") closeBalanceAdjustModal();
   });
 
+  qq('input[name="balanceDirectionRadio"]').forEach((radio) => {
+    radio.addEventListener("change", () => syncBalanceAdjustModalUi());
+  });
+
   q("#balanceAdjustForm").addEventListener("submit", async (event) => {
     event.preventDefault();
     const userId = q("#balanceUserId").value;
-    const direction = q("#balanceDirection").value;
+    const direction = qq('input[name="balanceDirectionRadio"]').find((r) => r.checked)?.value || "";
     const amount = Number(q("#balanceAmountInput").value || 0);
 
     if (!userId || !["add", "sub"].includes(direction)) {
@@ -902,11 +914,10 @@ function bindUserManage() {
         showToast("账号状态已更新");
         return;
       }
-      if (action === "add" || action === "sub") {
+      if (action === "balance") {
         const user = state.users.find((item) => item.id === userId);
         openBalanceAdjustModal({
           userId,
-          direction: action,
           account: user?.account || "未知用户",
         });
         return;
