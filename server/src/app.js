@@ -864,6 +864,27 @@ app.post("/api/admin/users/:id/balance", requireAdmin, async (req, res) => {
   res.json({ ok: true });
 });
 
+app.post("/api/admin/users/:id/reset-password", requireAdmin, async (req, res) => {
+  const userId = req.params.id;
+  const newPassword = safeString(req.body.newPassword);
+
+  if (newPassword.length < 6) {
+    res.status(400).json({ message: "新密码至少 6 位（与前台注册规则一致）" });
+    return;
+  }
+
+  const user = await db.get("SELECT id, username FROM users WHERE id = ?", [userId]);
+  if (!user) {
+    res.status(404).json({ message: "用户不存在" });
+    return;
+  }
+
+  const hash = await bcrypt.hash(newPassword, 10);
+  await db.run("UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?", [hash, getNowString(), user.id]);
+  await addActivity(`管理员重置用户 ${user.username} 的登录密码。`);
+  res.json({ ok: true });
+});
+
 app.get("/api/admin/users/:id/orders", requireAdmin, async (req, res) => {
   const userId = req.params.id;
   const user = await db.get("SELECT id, username FROM users WHERE id = ?", [userId]);

@@ -547,6 +547,31 @@
     </div>
   </div>
 
+  <div class="modal-backdrop" id="resetUserPasswordModalBackdrop">
+    <div class="modal glass admin-input-modal">
+      <div class="card-head">
+        <h3 id="resetUserPasswordTitle">重置用户密码</h3>
+        <button class="icon-btn" id="closeResetUserPasswordModal" aria-label="关闭">×</button>
+      </div>
+      <p class="hint" id="resetUserPasswordHint">设置新密码后，用户需使用新密码登录。</p>
+      <form id="resetUserPasswordForm" class="form-block">
+        <input type="hidden" id="resetPasswordUserId" />
+        <div class="field">
+          <label for="resetPasswordNew">新密码</label>
+          <input id="resetPasswordNew" type="password" minlength="6" autocomplete="new-password" required />
+        </div>
+        <div class="field">
+          <label for="resetPasswordConfirm">确认新密码</label>
+          <input id="resetPasswordConfirm" type="password" minlength="6" autocomplete="new-password" required />
+        </div>
+        <div class="row-actions">
+          <button class="btn primary" type="submit" id="resetUserPasswordSubmitBtn">确认重置</button>
+          <button class="btn ghost" type="button" id="cancelResetUserPasswordBtn">取消</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div class="modal-backdrop" id="auditRejectModalBackdrop">
     <div class="modal glass admin-input-modal">
       <div class="card-head">

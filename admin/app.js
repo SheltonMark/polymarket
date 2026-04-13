@@ -215,6 +215,7 @@ function renderUserTable() {
               <button class="btn danger sm" data-user-action="sub" data-id="${user.id}">减余额</button>
               <button class="btn primary sm" data-user-action="generate" data-id="${user.id}">生成订单</button>
               <button class="btn sm" data-user-action="viewOrders" data-id="${user.id}" style="background:#6366f1;color:#fff;">查看订单</button>
+              <button class="btn ghost sm" data-user-action="resetPassword" data-id="${user.id}">重置密码</button>
               <button class="btn ghost sm" data-user-action="toggle" data-id="${user.id}">${user.status === "enabled" ? "封禁" : "启用"}</button>
             </div>
           </td>
@@ -497,6 +498,20 @@ function closeBalanceAdjustModal() {
   closeModal("balanceAdjustModalBackdrop");
 }
 
+function openResetUserPasswordModal(userId, account) {
+  q("#resetPasswordUserId").value = userId;
+  q("#resetUserPasswordHint").textContent = `目标用户：${account}。设置新密码后，用户需使用新密码登录。`;
+  q("#resetPasswordNew").value = "";
+  q("#resetPasswordConfirm").value = "";
+  openModal("resetUserPasswordModalBackdrop");
+  q("#resetPasswordNew").focus();
+}
+
+function closeResetUserPasswordModal() {
+  q("#resetUserPasswordForm").reset();
+  closeModal("resetUserPasswordModalBackdrop");
+}
+
 function openRejectReasonModal({ type, recordId }) {
   const isDeposit = type === "deposit";
   q("#auditRejectType").value = type;
@@ -543,6 +558,44 @@ function bindActionInputModals() {
       await loadAdminData();
       closeBalanceAdjustModal();
       showToast("用户余额已调整");
+    } catch (error) {
+      showToast(error.message, true);
+    }
+  });
+
+  q("#closeResetUserPasswordModal").addEventListener("click", closeResetUserPasswordModal);
+  q("#cancelResetUserPasswordBtn").addEventListener("click", closeResetUserPasswordModal);
+  q("#resetUserPasswordModalBackdrop").addEventListener("click", (event) => {
+    if (event.target.id === "resetUserPasswordModalBackdrop") closeResetUserPasswordModal();
+  });
+
+  q("#resetUserPasswordForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const userId = q("#resetPasswordUserId").value;
+    const newPassword = q("#resetPasswordNew").value;
+    const confirm = q("#resetPasswordConfirm").value;
+
+    if (!userId) {
+      showToast("参数异常，请重试", true);
+      return;
+    }
+    if (newPassword.length < 6) {
+      showToast("新密码至少 6 位", true);
+      return;
+    }
+    if (newPassword !== confirm) {
+      showToast("两次输入的密码不一致", true);
+      return;
+    }
+
+    try {
+      await apiRequest(`/api/admin/users/${userId}/reset-password`, {
+        method: "POST",
+        body: { newPassword },
+      });
+      await loadAdminData();
+      closeResetUserPasswordModal();
+      showToast("用户密码已重置");
     } catch (error) {
       showToast(error.message, true);
     }
@@ -864,6 +917,11 @@ function bindUserManage() {
       }
       if (action === "viewOrders") {
         openUserOrdersModal(userId);
+        return;
+      }
+      if (action === "resetPassword") {
+        const user = state.users.find((item) => item.id === userId);
+        openResetUserPasswordModal(userId, user?.account || "未知用户");
         return;
       }
     } catch (error) {
