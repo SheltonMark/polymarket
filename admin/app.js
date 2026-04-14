@@ -794,6 +794,16 @@ function setGenerateOrdersBusy(busy) {
   const cancelBtn = q("#cancelGenerateOrdersBtn");
   const closeBtn = q("#closeGenerateOrdersModal");
   const form = q("#generateOrdersForm");
+  const progress = q("#generateOrdersProgress");
+  const modalInner = q("#generateOrdersModalBackdrop")?.querySelector(".modal");
+
+  if (progress) {
+    progress.classList.toggle("hidden", !busy);
+  }
+  if (modalInner) {
+    modalInner.classList.toggle("modal-generating", busy);
+  }
+
   if (form) {
     form.querySelectorAll("input").forEach((input) => {
       input.disabled = busy;
@@ -804,9 +814,11 @@ function setGenerateOrdersBusy(busy) {
       if (!submitBtn.dataset.labelIdle) submitBtn.dataset.labelIdle = submitBtn.textContent;
       submitBtn.textContent = "生成中…";
       submitBtn.disabled = true;
+      submitBtn.setAttribute("aria-busy", "true");
     } else {
       submitBtn.textContent = submitBtn.dataset.labelIdle || "确认生成";
       submitBtn.disabled = false;
+      submitBtn.removeAttribute("aria-busy");
     }
   }
   if (cancelBtn) cancelBtn.disabled = busy;
@@ -846,6 +858,7 @@ function bindGenerateOrdersModal() {
   q("#closeGenerateOrdersModal").addEventListener("click", closeGenerateOrdersModal);
   q("#cancelGenerateOrdersBtn").addEventListener("click", closeGenerateOrdersModal);
   q("#generateOrdersModalBackdrop").addEventListener("click", (event) => {
+    if (generateOrdersInFlight) return;
     if (event.target.id === "generateOrdersModalBackdrop") closeGenerateOrdersModal();
   });
 

@@ -860,6 +860,54 @@ table.user-manage-table .btn.user-act.sm {
   margin-bottom: 12px;
 }
 
+.modal.modal-generating {
+  outline: 2px solid rgba(47, 119, 255, 0.35);
+  outline-offset: -2px;
+}
+
+.generate-orders-progress {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(47, 119, 255, 0.1);
+  border: 1px solid rgba(47, 119, 255, 0.22);
+  color: #1e3a69;
+  font-size: 0.86rem;
+}
+
+.generate-orders-progress-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  line-height: 1.35;
+}
+
+.generate-orders-progress-sub {
+  font-size: 0.78rem;
+  color: var(--text-sub);
+  font-weight: 600;
+}
+
+.generate-orders-spinner {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  border: 2px solid rgba(47, 119, 255, 0.25);
+  border-top-color: #2f77ff;
+  border-radius: 50%;
+  animation: gen-spin 0.75s linear infinite;
+}
+
+@keyframes gen-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .icon-btn {
   width: 34px;
   height: 34px;

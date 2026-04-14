@@ -612,6 +612,13 @@
         <button class="icon-btn" id="closeGenerateOrdersModal" aria-label="关闭">×</button>
       </div>
       <p class="hint" id="generateOrdersHint">为用户批量生成订单，总金额不得超过可用本金。</p>
+      <div id="generateOrdersProgress" class="generate-orders-progress hidden" role="status" aria-live="polite">
+        <span class="generate-orders-spinner" aria-hidden="true"></span>
+        <span class="generate-orders-progress-text">
+          <strong>正在生成订单</strong>
+          <span class="generate-orders-progress-sub">请稍候，请勿关闭或重复点击</span>
+        </span>
+      </div>
       <form id="generateOrdersForm" class="form-block">
         <input type="hidden" id="genUserId" />
         <div class="field-row">
