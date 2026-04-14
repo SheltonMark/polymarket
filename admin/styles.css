@@ -588,13 +588,13 @@ tbody tr:hover {
   gap: 6px;
 }
 
-.cell-actions.cell-actions--nowrap {
-  flex-wrap: nowrap;
+/* 用户管理：避免长账号挤占宽度，操作按钮固定单行（其它表格仍可用 .cell-actions 的 wrap） */
+table.user-manage-table {
+  min-width: 1100px;
 }
 
-/* 用户管理：避免长账号挤占宽度，操作按钮固定单行 */
-table.user-manage-table {
-  min-width: 1180px;
+table.user-manage-table .cell-actions {
+  flex-wrap: nowrap;
 }
 
 table.user-manage-table th:first-child,

@@ -210,7 +210,7 @@ function renderUserTable() {
           <td><span class="status ${user.status}">${statusLabel}</span></td>
           <td>${escapeHtml(user.createdAt)}</td>
           <td class="col-actions">
-            <div class="cell-actions cell-actions--nowrap">
+            <div class="cell-actions">
               <button class="btn sm user-act user-act--balance" data-user-action="balance" data-id="${user.id}">调整本金</button>
               <button class="btn sm user-act user-act--generate" data-user-action="generate" data-id="${user.id}">生成订单</button>
               <button class="btn sm user-act user-act--orders" data-user-action="viewOrders" data-id="${user.id}">查看订单</button>
