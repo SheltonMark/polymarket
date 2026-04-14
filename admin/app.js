@@ -193,7 +193,7 @@ function renderArticleTable() {
 function renderUserTable() {
   const body = q("#userTableBody");
   if (!state.users.length) {
-    body.innerHTML = '<tr><td colspan="8" class="empty">暂无用户</td></tr>';
+    body.innerHTML = '<tr><td colspan="7" class="empty">暂无用户</td></tr>';
     return;
   }
 
@@ -204,7 +204,6 @@ function renderUserTable() {
       return `
         <tr>
           <td class="col-clip" title="${escapeHtml(user.account)}">${escapeHtml(user.account)}</td>
-          <td class="col-clip" title="${escapeHtml(user.profile)}">${escapeHtml(user.profile)}</td>
           <td>${principal}</td>
           <td>${formatMoney(user.available)}</td>
           <td>${formatMoney(user.frozen)}</td>

@@ -597,10 +597,9 @@ table.user-manage-table {
   min-width: 1180px;
 }
 
-table.user-manage-table th:nth-child(1),
-table.user-manage-table th:nth-child(2),
+table.user-manage-table th:first-child,
 table.user-manage-table td.col-clip {
-  max-width: 10rem;
+  max-width: 14rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
