@@ -33,6 +33,7 @@ const state = {
 };
 
 let toastTimer = null;
+let generateOrdersInFlight = false;
 let hasBoundEvents = false;
 
 function q(selector) {
@@ -788,9 +789,39 @@ function bindHomeManage() {
   });
 }
 
+function setGenerateOrdersBusy(busy) {
+  generateOrdersInFlight = busy;
+  const submitBtn = q("#genSubmitBtn");
+  const cancelBtn = q("#cancelGenerateOrdersBtn");
+  const closeBtn = q("#closeGenerateOrdersModal");
+  const form = q("#generateOrdersForm");
+  if (form) {
+    form.querySelectorAll("input").forEach((input) => {
+      input.disabled = busy;
+    });
+  }
+  if (submitBtn) {
+    if (busy) {
+      if (!submitBtn.dataset.labelIdle) submitBtn.dataset.labelIdle = submitBtn.textContent;
+      submitBtn.textContent = "生成中…";
+      submitBtn.disabled = true;
+    } else {
+      submitBtn.textContent = submitBtn.dataset.labelIdle || "确认生成";
+      submitBtn.disabled = false;
+    }
+  }
+  if (cancelBtn) cancelBtn.disabled = busy;
+  if (closeBtn) {
+    closeBtn.disabled = busy;
+    closeBtn.style.opacity = busy ? "0.45" : "";
+    closeBtn.style.pointerEvents = busy ? "none" : "";
+  }
+}
+
 function openGenerateOrdersModal(userId) {
   const user = state.users.find((item) => item.id === userId);
   if (!user) return;
+  setGenerateOrdersBusy(false);
   q("#genUserId").value = userId;
   q("#generateOrdersHint").textContent = `目标用户：${user.account}，可用本金：${formatMoney(user.principalAvailable)}`;
   q("#genTotalAmount").value = "";
@@ -806,7 +837,9 @@ function openGenerateOrdersModal(userId) {
 }
 
 function closeGenerateOrdersModal() {
+  if (generateOrdersInFlight) return;
   q("#generateOrdersForm").reset();
+  setGenerateOrdersBusy(false);
   closeModal("generateOrdersModalBackdrop");
 }
 
@@ -819,6 +852,8 @@ function bindGenerateOrdersModal() {
 
   q("#generateOrdersForm").addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (generateOrdersInFlight) return;
+
     const userId = q("#genUserId").value;
     const totalAmount = Number(q("#genTotalAmount").value || 0);
     const orderCount = Number(q("#genOrderCount").value || 1);
@@ -843,16 +878,20 @@ function bindGenerateOrdersModal() {
     if (tStart) body.timeStart = tStart.replace("T", " ") + ":00";
     if (tEnd) body.timeEnd = tEnd.replace("T", " ") + ":00";
 
+    setGenerateOrdersBusy(true);
     try {
       const result = await apiRequest(`/api/admin/users/${userId}/generate-orders`, {
         method: "POST",
         body,
       });
       await loadAdminData();
-      closeGenerateOrdersModal();
+      q("#generateOrdersForm").reset();
+      closeModal("generateOrdersModalBackdrop");
       showToast(`已生成 ${result.generated} 笔订单（完成${result.doneCount}笔，进行中${result.runningCount}笔）`);
     } catch (error) {
       showToast(error.message, true);
+    } finally {
+      setGenerateOrdersBusy(false);
     }
   });
 }
