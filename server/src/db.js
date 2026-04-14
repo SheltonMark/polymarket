@@ -1,5 +1,6 @@
 ﻿import fs from "node:fs";
 import path from "node:path";
+import { randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
 import sqlite3 from "sqlite3";
 import { open } from "sqlite";
@@ -23,7 +24,8 @@ function nowString() {
 }
 
 function makeId(prefix) {
-  return `${prefix}_${Date.now()}${Math.floor(Math.random() * 1000)}`;
+  // 同一毫秒内批量调用时 Date.now() 相同，仅用 0–999 随机数易碰撞；加随机 hex 后缀保证唯一
+  return `${prefix}_${Date.now()}_${randomBytes(6).toString("hex")}`;
 }
 
 const DEFAULT_PROJECT_POOL = [
