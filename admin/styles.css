@@ -588,6 +588,37 @@ tbody tr:hover {
   gap: 6px;
 }
 
+.cell-actions.cell-actions--nowrap {
+  flex-wrap: nowrap;
+}
+
+/* 用户管理：避免长账号挤占宽度，操作按钮固定单行 */
+table.user-manage-table {
+  min-width: 1180px;
+}
+
+table.user-manage-table th:nth-child(1),
+table.user-manage-table th:nth-child(2),
+table.user-manage-table td.col-clip {
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+table.user-manage-table th.col-actions,
+table.user-manage-table td.col-actions {
+  width: 1%;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+table.user-manage-table .btn.user-act.sm {
+  padding: 6px 8px;
+  font-size: 0.74rem;
+}
+
 .status {
   display: inline-flex;
   align-items: center;
