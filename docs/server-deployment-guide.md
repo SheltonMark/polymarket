@@ -34,14 +34,14 @@ mkdir -p /home/ubuntu/apps
 cd /home/ubuntu/apps
 ```
 
-## 4.3 上传代码（二选一）
-1. Git 方式（推荐）
-```bash
-git clone https://github.com/SheltonMark/polymarket.git
-```
+## 4.3 上传代码（SCP / 本地上传）
 
-2. SCP 方式（网络受限时）
-- 在本地将项目目录同步到 `/home/ubuntu/apps/polymarket`。
+当前线上环境**不以服务器执行 `git clone` / `git pull` 为约定**（网络或策略限制时）。首次上线请在**本机**克隆仓库后，将项目目录同步到服务器，例如：
+
+- 使用 **SCP / SFTP / rsync** 将整个 `polymarket` 目录上传到 `/home/ubuntu/apps/polymarket`；
+- 或使用打包：`tar` / `zip` 在本机打好再上传到服务器解压到上述路径。
+
+日常增量发布流程见 **[deploy-workflow.md](./deploy-workflow.md)**（仅 SCP）。
 
 ## 4.4 安装依赖并启动
 ```bash
@@ -64,36 +64,35 @@ curl http://127.0.0.1:3000/api/health
 
 ## 5.1 本地流程（建议）
 1. **若有构建**：先在本地执行项目的构建命令，失败则改代码直至构建通过（参见 [deploy-workflow.md](./deploy-workflow.md)）。
-2. `git add` / `git commit` / `git push`。
-3. 部署到服务器（见下文 5.2 或 5.3）。
+2. `git add` / `git commit` / `git push`（便于备份与协作）。
+3. **仅使用 SCP** 将变更文件上传到服务器（命令与清单见 [deploy-workflow.md](./deploy-workflow.md)）。
 
-## 5.2 服务器更新（Git 方式）
-```bash
-cd /home/ubuntu/apps/polymarket
-git pull --rebase origin main
-cd server
-npm install
-pm2 restart lockpro --update-env
-```
+## 5.2 服务器更新（SCP，唯一约定）
 
-## 5.3 服务器更新（SCP 方式）
-1. 本地将变更文件 `scp` 到服务器对应路径。
-2. 执行：
+1. 在本机按改动列表执行 `scp`（勿依赖服务器 `git pull`）。
+2. 若 **`server/package.json`** 或 **`package-lock.json`** 有更新：SSH 登录后执行  
+   `cd /home/ubuntu/apps/polymarket/server && npm install`
+3. 重启应用：
 ```bash
-cd /home/ubuntu/apps/polymarket
+cd /home/ubuntu/apps/polymarket/server
 pm2 restart lockpro --update-env
 ```
 
 ## 6. 回滚方案
 
-## 6.1 Git 回滚（推荐）
+## 6.1 回滚（本地 Git + SCP 覆盖）
+
+服务器不使用 `git pull` 时，回滚在**本地仓库**选定稳定版本，再将对应文件 **SCP 覆盖**到服务器并重启：
+
 ```bash
-cd /home/ubuntu/apps/polymarket
+# 本机
+cd /path/to/polymarket
 git log --oneline -n 20
 git checkout <稳定提交哈希>
-cd server
-pm2 restart lockpro --update-env
+# 将需要回滚的文件按 deploy-workflow 方式 scp 到服务器 …
 ```
+
+完成后可将本地分支恢复为 `main` 继续开发；以服务器上已覆盖的文件为准运行。
 
 ## 6.2 代码快照回滚
 - 若使用 SCP，可在上传前先备份目标文件（`*.bak`），异常时恢复并重启 PM2。

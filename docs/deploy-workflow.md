@@ -1,6 +1,6 @@
 # LockPro 发布与部署流程（日常）
 
-本文描述**从改代码到上线**的推荐顺序；服务器目录、PM2、健康检查等细节见 [server-deployment-guide.md](./server-deployment-guide.md)。敏感信息（SSH 主机、密钥路径）只写在本地 `docs/config.md`，**不要**写进仓库。
+本文描述**从改代码到上线**的推荐顺序。**当前约定：服务器不使用 `git pull`，上线仅通过 SCP（或等价的全量上传）同步文件。** 服务器目录、PM2、健康检查等细节见 [server-deployment-guide.md](./server-deployment-guide.md)。敏感信息（SSH 主机、密钥路径）只写在本地 `docs/config.md`，**不要**写进仓库。
 
 ---
 
@@ -13,18 +13,20 @@
     ↓
 构建失败 → 先修构建/代码，再重新构建，直到通过
     ↓
-git commit + git push（保证远端与即将上线内容一致）
+git commit + git push（归档与协作；与 SCP 部署互相独立）
     ↓
-部署到服务器（git pull 或 scp）
+用 SCP 将变更文件上传到服务器对应路径
     ↓
-（若依赖或脚本有变）服务器上 npm install 等
+（若 package.json / 锁文件有变）SSH 登录后在 server 目录 npm install
     ↓
 pm2 restart lockpro --update-env
     ↓
 验收（健康检查、关键页面）
 ```
 
-**原则：** 永远是「构建绿 → 再 commit/push → 再部署」。不要把未进 Git 或未通过构建的产物直接丢上服务器。
+**原则：**  
+1. 有构建时：**构建绿 → 再 commit/push → 再 SCP**。  
+2. 不要把未进 Git 或未通过构建的产物当作唯一备份；**本地仓库应先提交再上传**，便于追溯与回滚。
 
 ---
 
@@ -32,10 +34,10 @@ pm2 restart lockpro --update-env
 
 | 部分 | 说明 |
 |------|------|
-| `frontend/`、`admin/` | 静态 HTML / CSS / JS，由 Express 静态托管，**当前无 `npm run build`**。改完直接随 Git 或 scp 同步即可。 |
-| `server/` | Node 直接运行 `src/app.js`，**无打包构建**；`package.json` 仅有 `start` / `dev`。依赖变更后需在服务器执行 `npm install`。 |
+| `frontend/`、`admin/` | 静态 HTML / CSS / JS，由 Express 静态托管，**当前无 `npm run build`**。改动后直接 SCP 对应文件即可。 |
+| `server/` | Node 直接运行 `src/app.js`，**无打包构建**。依赖变更后须在服务器 `server` 目录执行 `npm install`。 |
 
-若日后为前台增加 Vite/Webpack 等，应在本节补充：**本地执行的构建命令**、**产物目录**、以及部署时需同步的是「构建输出」还是「源码」。
+若日后增加前端打包（如 Vite），在本节补充：**本地构建命令**、**产物目录**，以及 SCP 目标是「dist 产物」还是源码。
 
 ---
 
@@ -56,7 +58,7 @@ pm2 restart lockpro --update-env
    ```
    失败则修改代码或配置，重复直到构建成功。
 
-3. **提交并推送**  
+3. **提交并推送（强烈建议每次上线前执行）**  
    ```bash
    git status
    git add -A
@@ -66,47 +68,52 @@ pm2 restart lockpro --update-env
 
 ---
 
-## 4. 服务器部署（二选一）
+## 4. 服务器部署（仅 SCP）
 
-### 方式 A：Git（推荐）
+在 **本机** 执行上传（路径、用户、IP、密钥以本地 `docs/config.md` 为准）。
 
-在服务器执行：
+**PowerShell：** 禁止使用变量名 **`$host`**（与内置变量冲突），请使用例如 **`$sshHost`**。
 
-```bash
-cd /home/ubuntu/apps/polymarket
-git pull --rebase origin main
-cd server
-npm install
-pm2 restart lockpro --update-env
-```
+### 4.1 单次改动常用文件示例
 
-### 方式 B：SCP（仅同步指定文件）
-
-在 **本机** 执行（路径、用户、IP、密钥按你本地 `docs/config.md` 填写；**不要用 PowerShell 变量名 `$host`**，请使用例如 `$sshHost`）：
+按本次实际改动增减 `scp` 行；远端根目录一般为 `/home/ubuntu/apps/polymarket`。
 
 ```powershell
 $key = "C:\Users\你的用户名\.ssh\你的私钥"
 $sshHost = "ubuntu@你的服务器IP"
+$base = "d:\mast\polymarket"
 
-scp -i $key -o IdentitiesOnly=yes "d:\mast\polymarket\server\src\app.js" "${sshHost}:/home/ubuntu/apps/polymarket/server/src/app.js"
-# … 按需追加其它文件 …
+scp -i $key -o IdentitiesOnly=yes "$base\server\src\app.js" "${sshHost}:/home/ubuntu/apps/polymarket/server/src/app.js"
+scp -i $key -o IdentitiesOnly=yes "$base\server\src\db.js" "${sshHost}:/home/ubuntu/apps/polymarket/server/src/db.js"
+scp -i $key -o IdentitiesOnly=yes "$base\frontend\index.html" "${sshHost}:/home/ubuntu/apps/polymarket/frontend/index.html"
+scp -i $key -o IdentitiesOnly=yes "$base\frontend\app.js" "${sshHost}:/home/ubuntu/apps/polymarket/frontend/app.js"
+scp -i $key -o IdentitiesOnly=yes "$base\frontend\styles.css" "${sshHost}:/home/ubuntu/apps/polymarket/frontend/styles.css"
+scp -i $key -o IdentitiesOnly=yes "$base\admin\index.html" "${sshHost}:/home/ubuntu/apps/polymarket/admin/index.html"
+scp -i $key -o IdentitiesOnly=yes "$base\admin\app.js" "${sshHost}:/home/ubuntu/apps/polymarket/admin/app.js"
 
 ssh -i $key -o IdentitiesOnly=yes $sshHost "cd /home/ubuntu/apps/polymarket/server && pm2 restart lockpro --update-env"
 ```
 
-仅当你**明确知道**本次改动涉及哪些路径时再使用 SCP；否则优先 Git，避免漏文件。
+### 4.2 避免漏文件
+
+- 改动涉及多个目录时，对照 `git status` 或 `git diff --name-only`，逐条 SCP。  
+- 修改了 **`server/package.json`** 或 **`package-lock.json`** 时：除上传这两个文件外，务必 SSH 到服务器执行 **`cd .../server && npm install`**，再重启 PM2。
+
+### 4.3 大范围变更
+
+若本次触及文件很多，可在本机从干净仓库打包后上传解压（仍属「文件拷贝」思路），或分批 SCP；**不要假设服务器能执行 `git pull`**。
 
 ---
 
 ## 5. 部署后验收
 
 ```bash
-# 服务器上
+# SSH 登录服务器后
 curl -s http://127.0.0.1:3000/api/health
 pm2 logs lockpro --lines 80
 ```
 
-浏览器打开站点，检查交易中心、管理后台、新增接口等。
+浏览器打开站点，检查交易中心、管理后台、相关接口等。
 
 ---
 
@@ -114,13 +121,14 @@ pm2 logs lockpro --lines 80
 
 | 现象 | 处理 |
 |------|------|
-| 构建失败 | 不要部署；本地修到构建通过 → 再 commit / push / 部署。 |
+| 构建失败 | 不要部署；本地修到构建通过 → 再 commit/push → 再 SCP。 |
 | 依赖报错 | 服务器 `server` 目录执行 `npm install` 后再 `pm2 restart`。 |
-| 静态页仍是旧的 | 确认已推送且服务器已 pull，或 SCP 路径与 Nginx/Express 静态根目录一致。 |
+| 静态页仍是旧的 | 核对 SCP 目标路径是否与线上静态目录一致；确认已覆盖文件且无 CDN/浏览器强缓存干扰。 |
 
 ---
 
 ## 7. 与运维大文档的关系
 
 - **流程与顺序**：以本文为准。  
-- **环境安装、回滚、备份、日志**：见 [server-deployment-guide.md](./server-deployment-guide.md)。
+- **环境安装、备份、日志、Nginx**：见 [server-deployment-guide.md](./server-deployment-guide.md)。  
+- **回滚**：服务器无 Git 时，在**本地** checkout 到稳定提交后，将对应文件再次 **SCP 覆盖** 并重启 PM2（详见运维文档 §6）。
