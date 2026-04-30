@@ -433,13 +433,16 @@ html[data-theme="dark"] tbody tr:hover {
 }
 
 html[data-theme="dark"] .switch-btn {
+  border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(255, 255, 255, 0.08);
-  color: var(--text-soft);
+  color: rgba(232, 236, 248, 0.88);
 }
 
 html[data-theme="dark"] .switch-btn.active {
-  color: #17285f;
-  background: rgba(122, 163, 255, 0.42);
+  color: #f0f4ff;
+  background: rgba(88, 122, 228, 0.48);
+  border-color: rgba(160, 190, 255, 0.35);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
 }
 
 html[data-theme="dark"] .bank-info {
@@ -506,7 +509,45 @@ html[data-theme="dark"] .custom-select-arrow {
 
 html[data-theme="dark"] .record-item {
   border-color: rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(18, 22, 38, 0.92);
+}
+
+html[data-theme="dark"] .record-item .line-1 {
+  color: var(--text);
+}
+
+html[data-theme="dark"] .record-item .line-1 span:last-child {
+  color: var(--text-soft);
+  font-weight: 600;
+}
+
+html[data-theme="dark"] .record-item .line-2 {
+  color: rgba(232, 236, 248, 0.72);
+}
+
+html[data-theme="dark"] .stat-chip span {
+  color: var(--text-soft);
+}
+
+html[data-theme="dark"] .stat-chip strong {
+  color: var(--text);
+}
+
+html[data-theme="dark"] .metric span {
+  color: var(--text-soft);
+}
+
+html[data-theme="dark"] .metric strong {
+  color: var(--text);
+}
+
+html[data-theme="dark"] .metric-note {
+  color: var(--text-soft);
+}
+
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder {
+  color: rgba(232, 236, 248, 0.38);
 }
 
 html[data-theme="dark"] .chip,
@@ -1028,6 +1069,10 @@ html[data-theme="dark"] #pnlChart {
 
 .table-wrap {
   overflow-x: auto;
+}
+
+.market-board-history-wrap.table-wrap {
+  overflow-x: hidden;
 }
 
 table {
@@ -1920,42 +1965,83 @@ html[data-theme="dark"] .mb-num-neg {
 
 .market-board-history-wrap {
   flex: 1;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   max-height: min(58vh, 620px);
   margin-top: 8px;
 }
 
 .market-board-history-table {
-  width: max-content;
-  min-width: 100%;
+  width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
-  font-size: 0.8rem;
+  font-size: 0.62rem;
 }
 
 .market-board-history-table thead th {
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: 2;
   background: var(--card-strong);
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   text-align: left;
-  padding: 10px 12px;
+  padding: 7px 4px;
   font-weight: 700;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   border-bottom: 1px solid var(--stroke);
   color: var(--text-soft);
 }
 
 .market-board-history-table tbody td {
-  padding: 8px 12px;
+  padding: 6px 4px;
   border-bottom: 1px solid var(--stroke);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+html[data-theme="dark"] .market-board-history-table thead th {
+  background: #161c2f;
+  color: rgba(232, 236, 248, 0.78);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme="dark"] .market-board-history-modal .hint {
+  color: var(--text-soft);
 }
 
 .market-board-history-empty {
   text-align: center;
   color: var(--text-soft);
   padding: 28px 12px !important;
+}
+
+html[data-theme="dark"] .history-card .table-wrap {
+  overflow-x: hidden;
+}
+
+html[data-theme="dark"] .history-card table {
+  min-width: 0;
+  width: 100%;
+  table-layout: fixed;
+}
+
+html[data-theme="dark"] .history-card th,
+html[data-theme="dark"] .history-card td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 9px 6px;
+  font-size: 0.78rem;
+}
+
+html[data-theme="dark"] .btn.ghost.sm {
+  border-color: rgba(255, 255, 255, 0.22);
 }
 
 @media (max-width: 700px) {
