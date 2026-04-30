@@ -60,10 +60,12 @@ curl http://127.0.0.1:3000/api/health
 
 ## 5. 日常更新部署
 
+日常发布顺序（含构建失败时的处理、commit/push 先后）见 **[deploy-workflow.md](./deploy-workflow.md)**。
+
 ## 5.1 本地流程（建议）
-1. 本地改动并测试。
+1. **若有构建**：先在本地执行项目的构建命令，失败则改代码直至构建通过（参见 [deploy-workflow.md](./deploy-workflow.md)）。
 2. `git add` / `git commit` / `git push`。
-3. 部署到服务器。
+3. 部署到服务器（见下文 5.2 或 5.3）。
 
 ## 5.2 服务器更新（Git 方式）
 ```bash
