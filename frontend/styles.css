@@ -1887,10 +1887,13 @@ html[data-theme="dark"] .market-board-card {
   text-align: left;
   padding: 7px 5px;
   font-weight: 700;
-  font-size: 0.58rem;
+  font-size: 0.56rem;
   letter-spacing: 0.02em;
   text-transform: none;
-  white-space: nowrap;
+  white-space: normal;
+  line-height: 1.22;
+  word-break: break-word;
+  vertical-align: bottom;
   background: var(--mb-head-bg);
   border-bottom: 1px solid var(--mb-stroke);
   color: var(--mb-muted);
@@ -1988,9 +1991,13 @@ html[data-theme="dark"] .mb-num-neg {
   text-align: left;
   padding: 7px 4px;
   font-weight: 700;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 0.56rem;
+  line-height: 1.22;
+  white-space: normal;
+  word-break: break-word;
+  vertical-align: bottom;
+  overflow: visible;
+  text-overflow: unset;
   border-bottom: 1px solid var(--stroke);
   color: var(--text-soft);
 }

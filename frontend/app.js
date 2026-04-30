@@ -1454,20 +1454,20 @@ function initSiteTheme() {
 }
 
 const MARK_BOARD_HEADERS = [
-  "Pair A",
-  "Pair B",
-  "Event Time",
-  "Bilateral A",
-  "Bilateral B",
-  "Margin %",
-  "Depth",
-  "Trade Amt",
-  "Profit",
-  "Settled At",
+  "Hedge Pair Name-A",
+  "Hedge Pair Name-B",
+  "Event Occurrence Time",
+  "Bilateral Value-A",
+  "Bilateral Value-B",
+  "Profit Margin",
+  "Market Depth",
+  "Trading Amount",
+  "Profit Amount",
+  "Profit Settlement Time",
 ];
 
 /** 与 MARK_BOARD_HEADERS 列数一致，百分比之和为 100 */
-const MARK_BOARD_COL_PCTS = [13, 13, 12, 8, 8, 7, 7, 12, 10, 10];
+const MARK_BOARD_COL_PCTS = [14, 14, 11, 7, 7, 6, 8, 9, 8, 16];
 
 
 let marketBoardPollTimer = null;
