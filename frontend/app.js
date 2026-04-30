@@ -173,11 +173,16 @@ function updateSegmentIndicator(container, selector, indicator) {
   indicator.style.transform = `translateX(${left}px)`;
 }
 
+function refreshSiteThemeIndicator() {
+  updateSegmentIndicator(q("#siteThemeSegment"), ".site-theme-nav-btn.active", q("#siteThemeIndicator"));
+}
+
 function refreshAllSegmentIndicators() {
   updateSegmentIndicator(q("#mainNav"), ".nav-btn.active", q("#segmentIndicator"));
   updateSegmentIndicator(q("#timeFilter"), ".time-btn.active", q("#timeIndicator"));
   updateSegmentIndicator(q("#homeTopicTabs"), ".home-topic-btn.active", q("#homeTopicIndicator"));
   updateSegmentIndicator(q("#authTabs"), ".auth-tab.active", q("#authIndicator"));
+  refreshSiteThemeIndicator();
 }
 
 function switchSection(id) {
@@ -1427,8 +1432,10 @@ function applySiteTheme(theme) {
   const t = theme === "dark" ? "dark" : "light";
   document.documentElement.dataset.theme = t;
   localStorage.setItem(SITE_THEME_KEY, t);
-  q("#siteThemeLight")?.classList.toggle("active", t === "light");
-  q("#siteThemeDark")?.classList.toggle("active", t === "dark");
+  qq(".site-theme-nav-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.siteTheme === t);
+  });
+  refreshSiteThemeIndicator();
   drawPnlChart();
 }
 
@@ -1436,8 +1443,14 @@ function initSiteTheme() {
   const saved =
     localStorage.getItem(SITE_THEME_KEY) || localStorage.getItem(SITE_THEME_LEGACY_KEY) || "light";
   applySiteTheme(saved === "dark" ? "dark" : "light");
-  q("#siteThemeLight")?.addEventListener("click", () => applySiteTheme("light"));
-  q("#siteThemeDark")?.addEventListener("click", () => applySiteTheme("dark"));
+
+  const segment = q("#siteThemeSegment");
+  segment?.addEventListener("click", (event) => {
+    const btn = event.target.closest("[data-site-theme]");
+    if (!btn || !segment.contains(btn)) return;
+    event.preventDefault();
+    applySiteTheme(btn.dataset.siteTheme);
+  });
 }
 
 const MARK_BOARD_HEADERS = [

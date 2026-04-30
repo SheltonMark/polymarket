@@ -35,9 +35,17 @@
       </nav>
 
       <div class="topbar-actions">
-        <div class="site-theme-toggle" role="group" aria-label="页面深浅色">
-          <button type="button" class="site-theme-btn active" id="siteThemeLight" data-theme="light">浅色</button>
-          <button type="button" class="site-theme-btn" id="siteThemeDark" data-theme="dark">深色</button>
+        <div
+          class="liquid-segment site-theme-segment small"
+          id="siteThemeSegment"
+          role="group"
+          aria-label="页面深浅色"
+        >
+          <span class="segment-indicator" id="siteThemeIndicator"></span>
+          <button type="button" class="site-theme-nav-btn active" id="siteThemeLight" data-site-theme="light">
+            浅色
+          </button>
+          <button type="button" class="site-theme-nav-btn" id="siteThemeDark" data-site-theme="dark">深色</button>
         </div>
         <button class="btn ghost" id="authBtn">注册 / 登录</button>
         <button class="btn sm top-logout-btn" id="topLogoutBtn" type="button" style="display:none;">退出</button>
@@ -113,14 +121,14 @@
               <button type="button" class="btn ghost sm" id="marketBoardHistoryBtn">历史记录</button>
             </div>
           </div>
-          <div class="market-board-viewport" id="marketBoardViewport">
-            <div class="market-board-split">
-              <div class="market-board-fixed-head">
-                <table class="market-board-table market-board-head-table" lang="en">
-                  <colgroup id="marketBoardHeadColgroup"></colgroup>
-                  <thead><tr id="marketBoardHeadRow"></tr></thead>
-                </table>
-              </div>
+          <div class="market-board-data-shell">
+            <div class="market-board-head-panel">
+              <table class="market-board-table market-board-head-table" lang="en">
+                <colgroup id="marketBoardHeadColgroup"></colgroup>
+                <thead><tr id="marketBoardHeadRow"></tr></thead>
+              </table>
+            </div>
+            <div class="market-board-scroll-panel">
               <div class="market-board-body-marquee" id="marketBoardMarquee">
                 <div class="market-board-fade market-board-fade--edge market-board-fade--top" aria-hidden="true"></div>
                 <div class="market-board-track" id="marketBoardTrack"></div>
