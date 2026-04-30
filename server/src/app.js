@@ -65,55 +65,48 @@ function formatMsAsMarketDatetime(ms) {
   return `${yy}-${mm}-${dd} ${hh}:${mi}:${ss}`;
 }
 
-async function getMarketBoardPoolsFromDb() {
-  const row = await db.get("SELECT hedge_pair_pool_a, hedge_pair_pool_b FROM market_board_config WHERE id = 1");
-  let poolA = [];
-  let poolB = [];
-  try {
-    poolA = JSON.parse(row?.hedge_pair_pool_a || "[]");
-  } catch {
-    poolA = [];
-  }
-  try {
-    poolB = JSON.parse(row?.hedge_pair_pool_b || "[]");
-  } catch {
-    poolB = [];
-  }
-  const fallback = ["Value Matrix", "Signal Harbor", "Nova Grid", "Apex Flow", "Orion Pulse"];
-  if (!Array.isArray(poolA) || poolA.length === 0) poolA = fallback;
-  if (!Array.isArray(poolB) || poolB.length === 0) poolB = fallback;
-  return {
-    poolA: poolA.map(String).filter(Boolean),
-    poolB: poolB.map(String).filter(Boolean),
-  };
+function localDateKey(d = new Date()) {
+  const dt = d instanceof Date ? d : new Date(d);
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth() + 1).padStart(2, "0");
+  const day = String(dt.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
-async function insertRandomMarketBoardRow() {
-  const { poolA, poolB } = await getMarketBoardPoolsFromDb();
-  const nameA = poolA[Math.floor(Math.random() * poolA.length)] || "Hedge Pair A";
-  const nameB = poolB[Math.floor(Math.random() * poolB.length)] || "Hedge Pair B";
+function clampNumber(value, min, max, fallback) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
+}
 
-  let bilateralA = 1;
-  let bilateralB = 1;
-  let sum = 2;
-  while (sum <= 90 || sum >= 99) {
-    bilateralA = randomIntBetween(1, 99);
-    bilateralB = randomIntBetween(1, 99);
-    sum = bilateralA + bilateralB;
+async function getMarketBoardNamePool() {
+  const row = await db.get("SELECT hedge_pair_pool_a FROM market_board_config WHERE id = 1");
+  let pool = [];
+  try {
+    pool = JSON.parse(row?.hedge_pair_pool_a || "[]");
+  } catch {
+    pool = [];
   }
+  const fallback = ["Value Matrix", "Signal Harbor", "Nova Grid", "Apex Flow", "Orion Pulse"];
+  if (!Array.isArray(pool) || pool.length === 0) pool = fallback;
+  return pool.map(String).filter(Boolean);
+}
 
-  const profitMarginPct = round2(randomBetween(1, 10));
-  const marketDepth = round2(randomBetween(100, 50000));
-  const tradingAmount = round2(marketDepth * randomBetween(0.014, 0.2));
-  const profitAmount = round2((tradingAmount * profitMarginPct) / 100);
-
-  const nowMs = Date.now();
-  const eventMs = nowMs - Math.floor(Math.random() * 86400000);
-  const settleMs = eventMs + 7200000 + Math.floor(Math.random() * 7200000);
-
+async function insertMarketBoardRowGenerated(payload) {
+  const {
+    nameA,
+    nameB,
+    eventMs,
+    settleMs,
+    bilateralA,
+    bilateralB,
+    profitMarginPct,
+    marketDepth,
+    tradingAmount,
+    profitAmount,
+  } = payload;
   const id = newId("mb");
   const createdAt = getNowString();
-
   await db.run(
     `INSERT INTO market_board_rows (
       id, pair_name, hedge_pair_name_a, hedge_pair_name_b, event_occurred_at, bilateral_a, bilateral_b,
@@ -138,26 +131,118 @@ async function insertRandomMarketBoardRow() {
   );
 }
 
-async function seedMarketBoardIfEmpty() {
-  const row = await db.get("SELECT COUNT(1) AS c FROM market_board_rows");
-  const n = Number(row?.c || 0);
-  if (n > 0) return;
-  const target = 28;
-  for (let i = 0; i < target; i += 1) {
-    await insertRandomMarketBoardRow();
+function allocateDailyProfits(totalProfit, n) {
+  const P = round2(totalProfit);
+  if (n <= 0 || P <= 0) return [];
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    const weights = Array.from({ length: n }, () => Math.random() + 0.05);
+    const wsum = weights.reduce((a, b) => a + b, 0);
+    const parts = weights.map((w) => round2((P * w) / wsum));
+    const head = parts.slice(0, -1).reduce((a, b) => a + b, 0);
+    parts[n - 1] = round2(P - head);
+    if (parts.every((p) => p > 0)) return parts;
+  }
+  const each = round2(P / n);
+  const parts = Array.from({ length: n }, () => each);
+  parts[n - 1] = round2(P - each * (n - 1));
+  return parts;
+}
+
+async function generateMarketBoardBatchForDay(dayKey, cfgRow) {
+  const pool = await getMarketBoardNamePool();
+  const V = clampNumber(cfgRow.daily_total_volume, 1000, 1e12, 381200);
+  const pct = clampNumber(cfgRow.daily_profit_pct, 0.01, 100, 1);
+  const N = Math.floor(clampNumber(cfgRow.daily_trade_count, 1, 500, 66));
+  const mMin = clampNumber(cfgRow.profit_margin_min, 0.01, 100, 1);
+  const mMax = clampNumber(cfgRow.profit_margin_max, mMin, 100, 10);
+  const dMin = clampNumber(cfgRow.market_depth_min, 1, 1e9, 101);
+  const dMax = clampNumber(cfgRow.market_depth_max, dMin + 1, 1e9, Math.max(50000, dMin + 1));
+
+  const targetProfit = round2(V * (pct / 100));
+  const profits = allocateDailyProfits(targetProfit, N);
+
+  const dayAnchor = new Date(`${dayKey}T12:00:00`).getTime();
+  if (!Number.isFinite(dayAnchor)) {
+    throw new Error("invalid batch day key");
+  }
+
+  const margins = Array.from({ length: N }, () => round2(randomBetween(mMin, mMax)));
+
+  for (let i = 0; i < N; i += 1) {
+    let profitMarginPct = margins[i];
+    let profitAmount = profits[i];
+    let tradingAmount = round2((profitAmount * 100) / profitMarginPct);
+
+    if (!Number.isFinite(tradingAmount) || tradingAmount <= 0) {
+      profitMarginPct = round2(randomBetween(mMin, mMax));
+      tradingAmount = round2((profitAmount * 100) / profitMarginPct);
+    }
+
+    let lo = Math.max(dMin, tradingAmount + 1);
+    let hi = Math.max(lo + 1, dMax);
+    let marketDepth = round2(randomBetween(lo, hi));
+
+    let bilateralA = 1;
+    let bilateralB = 1;
+    let sumAb = 2;
+    while (sumAb <= 90 || sumAb >= 99) {
+      bilateralA = randomIntBetween(1, 99);
+      bilateralB = randomIntBetween(1, 99);
+      sumAb = bilateralA + bilateralB;
+    }
+
+    const pickName = () => pool[Math.floor(Math.random() * pool.length)] || "Pair";
+    const nameA = pickName();
+    const nameB = pickName();
+
+    const eventMs = dayAnchor - Math.floor(Math.random() * 86400000);
+    const settleMs = eventMs + 7200000 + Math.floor(Math.random() * 7200000);
+
+    await insertMarketBoardRowGenerated({
+      nameA,
+      nameB,
+      eventMs,
+      settleMs,
+      bilateralA,
+      bilateralB,
+      profitMarginPct,
+      marketDepth,
+      tradingAmount,
+      profitAmount,
+    });
   }
 }
 
-function scheduleMarketBoardGeneration() {
-  const delay = 5000 + Math.floor(Math.random() * 115000);
-  setTimeout(async () => {
-    try {
-      await insertRandomMarketBoardRow();
-    } catch (err) {
-      console.error("[market-board]", err.message || err);
+async function ensureMarketBoardDailyBatch() {
+  const today = localDateKey();
+  await db.exec("BEGIN IMMEDIATE");
+  try {
+    const cfg = await db.get(`SELECT * FROM market_board_config WHERE id = 1`);
+    if (!cfg) {
+      await db.exec("COMMIT");
+      return;
     }
-    scheduleMarketBoardGeneration();
-  }, delay);
+    const lastDay = safeString(cfg.last_batch_day || "");
+    if (lastDay === today) {
+      await db.exec("COMMIT");
+      return;
+    }
+    await generateMarketBoardBatchForDay(today, cfg);
+    await db.run(`UPDATE market_board_config SET last_batch_day = ?, updated_at = ? WHERE id = 1`, [
+      today,
+      getNowString(),
+    ]);
+    await db.exec("COMMIT");
+  } catch (err) {
+    await db.exec("ROLLBACK");
+    throw err;
+  }
+}
+
+function scheduleMarketBoardDailyCheck() {
+  setInterval(() => {
+    ensureMarketBoardDailyBatch().catch((e) => console.error("[market-board]", e.message || e));
+  }, 60_000);
 }
 
 function mapMarketBoardRow(r) {
@@ -1448,41 +1533,77 @@ app.put("/api/admin/order-generation-defaults", requireAdmin, async (req, res) =
 
 app.get("/api/admin/market-board-config", requireAdmin, async (_req, res) => {
   const row = await db.get("SELECT * FROM market_board_config WHERE id = 1");
-  let poolA = [];
-  let poolB = [];
+  let pool = [];
   try {
-    poolA = JSON.parse(row?.hedge_pair_pool_a || "[]");
+    pool = JSON.parse(row?.hedge_pair_pool_a || "[]");
   } catch {
-    poolA = [];
+    pool = [];
   }
-  try {
-    poolB = JSON.parse(row?.hedge_pair_pool_b || "[]");
-  } catch {
-    poolB = [];
+  if (!Array.isArray(pool) || pool.length === 0) {
+    try {
+      pool = JSON.parse(row?.hedge_pair_pool_b || "[]");
+    } catch {
+      pool = [];
+    }
   }
   res.json({
-    hedgePairPoolA: Array.isArray(poolA) ? poolA : [],
-    hedgePairPoolB: Array.isArray(poolB) ? poolB : [],
+    hedgePairPool: Array.isArray(pool) ? pool.map(String).filter(Boolean) : [],
+    dailyTotalVolume: Number(row?.daily_total_volume ?? 381200),
+    dailyProfitPct: Number(row?.daily_profit_pct ?? 1),
+    dailyTradeCount: Number(row?.daily_trade_count ?? 66),
+    profitMarginMin: Number(row?.profit_margin_min ?? 1),
+    profitMarginMax: Number(row?.profit_margin_max ?? 10),
+    marketDepthMin: Number(row?.market_depth_min ?? 101),
+    marketDepthMax: Number(row?.market_depth_max ?? 50000),
+    lastBatchDay: safeString(row?.last_batch_day || ""),
     updatedAt: row?.updated_at || "",
   });
 });
 
 app.put("/api/admin/market-board-config", requireAdmin, async (req, res) => {
-  const poolA = Array.isArray(req.body.hedgePairPoolA)
-    ? req.body.hedgePairPoolA.map((item) => safeString(String(item))).filter(Boolean)
+  const rawPool = req.body.hedgePairPool ?? req.body.hedgePairPoolA;
+  const pool = Array.isArray(rawPool)
+    ? rawPool.map((item) => safeString(String(item))).filter(Boolean)
     : [];
-  const poolB = Array.isArray(req.body.hedgePairPoolB)
-    ? req.body.hedgePairPoolB.map((item) => safeString(String(item))).filter(Boolean)
-    : [];
-  if (!poolA.length || !poolB.length) {
-    res.status(400).json({ message: "Hedge Pair Name-A 与 Name-B 名称池至少各保留一条" });
+  if (!pool.length) {
+    res.status(400).json({ message: "Hedge Pair 名称池至少保留一条（每行一条）" });
     return;
   }
+
+  const dailyTotalVolume = clampNumber(req.body.dailyTotalVolume, 1000, 1e12, 381200);
+  const dailyProfitPct = clampNumber(req.body.dailyProfitPct, 0.01, 100, 1);
+  const dailyTradeCount = Math.floor(clampNumber(req.body.dailyTradeCount, 1, 500, 66));
+  let profitMarginMin = clampNumber(req.body.profitMarginMin, 0.01, 100, 1);
+  let profitMarginMax = clampNumber(req.body.profitMarginMax, profitMarginMin, 100, 10);
+  profitMarginMin = Math.min(profitMarginMin, profitMarginMax);
+
+  let marketDepthMin = clampNumber(req.body.marketDepthMin, 1, 1e9, 101);
+  let marketDepthMax = clampNumber(req.body.marketDepthMax, marketDepthMin + 1, 1e9, 50000);
+  marketDepthMin = Math.min(marketDepthMin, marketDepthMax - 1);
+
+  const poolJson = JSON.stringify(pool);
   await db.run(
-    `UPDATE market_board_config SET hedge_pair_pool_a = ?, hedge_pair_pool_b = ?, updated_at = ? WHERE id = 1`,
-    [JSON.stringify(poolA), JSON.stringify(poolB), getNowString()],
+    `UPDATE market_board_config SET
+       hedge_pair_pool_a = ?, hedge_pair_pool_b = ?,
+       daily_total_volume = ?, daily_profit_pct = ?, daily_trade_count = ?,
+       profit_margin_min = ?, profit_margin_max = ?,
+       market_depth_min = ?, market_depth_max = ?,
+       updated_at = ?
+     WHERE id = 1`,
+    [
+      poolJson,
+      poolJson,
+      dailyTotalVolume,
+      dailyProfitPct,
+      dailyTradeCount,
+      profitMarginMin,
+      profitMarginMax,
+      marketDepthMin,
+      marketDepthMax,
+      getNowString(),
+    ],
   );
-  await addActivity("大盘行情 Hedge Pair 名称池已更新。");
+  await addActivity("大盘模拟参数与名称池已更新（前台仅展示行情，不暴露配置）。");
   res.json({ ok: true });
 });
 
@@ -1687,9 +1808,9 @@ app.use((err, _req, res, _next) => {
 
 app.listen(PORT, () => {
   console.log(`LockPro server running on http://localhost:${PORT}`);
-  seedMarketBoardIfEmpty()
-    .catch((e) => console.error("[market-board] seed", e))
+  ensureMarketBoardDailyBatch()
+    .catch((e) => console.error("[market-board] daily batch", e))
     .finally(() => {
-      scheduleMarketBoardGeneration();
+      scheduleMarketBoardDailyCheck();
     });
 });

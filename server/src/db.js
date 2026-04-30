@@ -689,6 +689,33 @@ export async function initDb() {
     );
   }
 
+  const mbCfgCols = await db.all("PRAGMA table_info(market_board_config)");
+  const mbCfgNames = new Set(mbCfgCols.map((c) => c.name));
+  if (!mbCfgNames.has("daily_total_volume")) {
+    await db.exec(`ALTER TABLE market_board_config ADD COLUMN daily_total_volume REAL NOT NULL DEFAULT 381200`);
+  }
+  if (!mbCfgNames.has("daily_profit_pct")) {
+    await db.exec(`ALTER TABLE market_board_config ADD COLUMN daily_profit_pct REAL NOT NULL DEFAULT 1`);
+  }
+  if (!mbCfgNames.has("daily_trade_count")) {
+    await db.exec(`ALTER TABLE market_board_config ADD COLUMN daily_trade_count INTEGER NOT NULL DEFAULT 66`);
+  }
+  if (!mbCfgNames.has("profit_margin_min")) {
+    await db.exec(`ALTER TABLE market_board_config ADD COLUMN profit_margin_min REAL NOT NULL DEFAULT 1`);
+  }
+  if (!mbCfgNames.has("profit_margin_max")) {
+    await db.exec(`ALTER TABLE market_board_config ADD COLUMN profit_margin_max REAL NOT NULL DEFAULT 10`);
+  }
+  if (!mbCfgNames.has("market_depth_min")) {
+    await db.exec(`ALTER TABLE market_board_config ADD COLUMN market_depth_min REAL NOT NULL DEFAULT 101`);
+  }
+  if (!mbCfgNames.has("market_depth_max")) {
+    await db.exec(`ALTER TABLE market_board_config ADD COLUMN market_depth_max REAL NOT NULL DEFAULT 50000`);
+  }
+  if (!mbCfgNames.has("last_batch_day")) {
+    await db.exec(`ALTER TABLE market_board_config ADD COLUMN last_batch_day TEXT NOT NULL DEFAULT ''`);
+  }
+
   const userColumns = await db.all("PRAGMA table_info(users)");
   const hasPrincipalAvailable = userColumns.some((column) => column.name === "principal_available");
   const hasProfitAvailable = userColumns.some((column) => column.name === "profit_available");

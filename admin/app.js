@@ -6,7 +6,7 @@ const SECTION_META = {
   "home-manage": { title: "首页管理", desc: "配置首页标题与文章内容。" },
   "user-manage": { title: "用户管理", desc: "查看用户信息，调整本金、订单与账号状态。" },
   "order-config": { title: "订单配置", desc: "配置批量生成订单的默认参数（冻结、收益、时间）。项目名池用于订单模板名称。" },
-  "market-board-config": { title: "大盘配置", desc: "维护前台大盘行情的 Hedge Pair Name-A / Name-B 两套名称池（每行一条）。" },
+  "market-board-config": { title: "大盘配置", desc: "名称池与每日模拟参数（仅后台生效；前台不展示配置）。每日按服务器日期批量生成行情。" },
   "order-manage": { title: "订单管理", desc: "配置订单模板状态与归档。" },
   "deposit-manage": { title: "充值管理", desc: "审核用户充值申请，支持通过或驳回。" },
   "withdraw-manage": { title: "提现管理", desc: "审核用户提现申请，支持通过或驳回。" },
@@ -912,10 +912,25 @@ function bindGenerateOrdersModal() {
 async function loadMarketBoardConfig() {
   try {
     const data = await apiRequest("/api/admin/market-board-config");
-    const poolA = Array.isArray(data.hedgePairPoolA) ? data.hedgePairPoolA : [];
-    const poolB = Array.isArray(data.hedgePairPoolB) ? data.hedgePairPoolB : [];
-    q("#mbPoolA").value = poolA.join("\n");
-    q("#mbPoolB").value = poolB.join("\n");
+    let pool = [];
+    if (Array.isArray(data.hedgePairPool) && data.hedgePairPool.length) {
+      pool = data.hedgePairPool;
+    } else if (Array.isArray(data.hedgePairPoolA) && data.hedgePairPoolA.length) {
+      pool = data.hedgePairPoolA;
+    }
+    q("#mbPool").value = pool.join("\n");
+    q("#mbDailyVolume").value = String(data.dailyTotalVolume ?? 381200);
+    q("#mbDailyProfitPct").value = String(data.dailyProfitPct ?? 1);
+    q("#mbDailyTradeCount").value = String(data.dailyTradeCount ?? 66);
+    q("#mbMarginMin").value = String(data.profitMarginMin ?? 1);
+    q("#mbMarginMax").value = String(data.profitMarginMax ?? 10);
+    q("#mbDepthMin").value = String(data.marketDepthMin ?? 101);
+    q("#mbDepthMax").value = String(data.marketDepthMax ?? 50000);
+    const hint = q("#mbLastBatchHint");
+    if (hint) {
+      const day = data.lastBatchDay ? String(data.lastBatchDay) : "尚无记录";
+      hint.textContent = `上一批量生成日期（服务器本地）：${day}`;
+    }
   } catch {
     /* ignore */
   }
@@ -924,16 +939,25 @@ async function loadMarketBoardConfig() {
 function bindMarketBoardConfig() {
   q("#marketBoardConfigForm").addEventListener("submit", async (event) => {
     event.preventDefault();
-    const poolAText = q("#mbPoolA").value.trim();
-    const poolBText = q("#mbPoolB").value.trim();
-    const hedgePairPoolA = poolAText ? poolAText.split("\n").map((s) => s.trim()).filter(Boolean) : [];
-    const hedgePairPoolB = poolBText ? poolBText.split("\n").map((s) => s.trim()).filter(Boolean) : [];
+    const poolText = q("#mbPool").value.trim();
+    const hedgePairPool = poolText ? poolText.split("\n").map((s) => s.trim()).filter(Boolean) : [];
+    const body = {
+      hedgePairPool,
+      dailyTotalVolume: Number(q("#mbDailyVolume").value || 381200),
+      dailyProfitPct: Number(q("#mbDailyProfitPct").value || 1),
+      dailyTradeCount: Number(q("#mbDailyTradeCount").value || 66),
+      profitMarginMin: Number(q("#mbMarginMin").value || 1),
+      profitMarginMax: Number(q("#mbMarginMax").value || 10),
+      marketDepthMin: Number(q("#mbDepthMin").value || 101),
+      marketDepthMax: Number(q("#mbDepthMax").value || 50000),
+    };
     try {
       await apiRequest("/api/admin/market-board-config", {
         method: "PUT",
-        body: { hedgePairPoolA, hedgePairPoolB },
+        body,
       });
       showToast("大盘配置已保存");
+      await loadMarketBoardConfig();
     } catch (error) {
       showToast(error.message, true);
     }

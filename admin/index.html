@@ -263,18 +263,47 @@
         <section class="section" id="market-board-config">
           <article class="card glass">
             <div class="card-head">
-              <h3>前台大盘 · Hedge Pair 名称池</h3>
-              <span class="hint">与 Excel 表头「Hedge Pair Name-A / Hedge Pair Name-B」对应；服务端随机分别从 A 池、B 池各取一条写入行情。每行一条名称。</span>
+              <h3>前台大盘 · 模拟参数（仅后台）</h3>
+              <span class="hint">下列数值不会出现在前台；前台仅拉取行情。名称池用于 Pair A/B；按总金额与总利润率计算当日目标总利润，均分到 N 条后按单笔利润率反推交易金额；深度大于交易额；每日按服务器本地日期写入一批。</span>
             </div>
             <form id="marketBoardConfigForm" class="form-block">
               <div class="field">
-                <label for="mbPoolA">Hedge Pair Name-A 名称池</label>
-                <textarea id="mbPoolA" rows="8" placeholder="每行一个名称"></textarea>
+                <label for="mbPool">Hedge Pair 名称池（每行一条，Pair A / B 均从此池随机）</label>
+                <textarea id="mbPool" rows="8" placeholder="每行一个名称"></textarea>
               </div>
-              <div class="field">
-                <label for="mbPoolB">Hedge Pair Name-B 名称池</label>
-                <textarea id="mbPoolB" rows="8" placeholder="每行一个名称"></textarea>
+              <div class="field-row">
+                <div class="field">
+                  <label for="mbDailyVolume">当日参与交易总金额（用于计算目标总利润）</label>
+                  <input id="mbDailyVolume" type="number" step="1" min="1000" required />
+                </div>
+                <div class="field">
+                  <label for="mbDailyProfitPct">当日总利润率（%，填 1 表示 1%）</label>
+                  <input id="mbDailyProfitPct" type="number" step="0.01" min="0.01" required />
+                </div>
+                <div class="field">
+                  <label for="mbDailyTradeCount">当日生成条数</label>
+                  <input id="mbDailyTradeCount" type="number" step="1" min="1" max="500" required />
+                </div>
               </div>
+              <div class="field-row">
+                <div class="field">
+                  <label for="mbMarginMin">单笔利润率下限（%）</label>
+                  <input id="mbMarginMin" type="number" step="0.01" min="0.01" required />
+                </div>
+                <div class="field">
+                  <label for="mbMarginMax">单笔利润率上限（%）</label>
+                  <input id="mbMarginMax" type="number" step="0.01" min="0.01" required />
+                </div>
+                <div class="field">
+                  <label for="mbDepthMin">市场深度下限</label>
+                  <input id="mbDepthMin" type="number" step="1" min="1" required />
+                </div>
+                <div class="field">
+                  <label for="mbDepthMax">市场深度上限</label>
+                  <input id="mbDepthMax" type="number" step="1" min="2" required />
+                </div>
+              </div>
+              <p class="hint" id="mbLastBatchHint"></p>
               <button class="btn primary" type="submit">保存大盘配置</button>
             </form>
           </article>
