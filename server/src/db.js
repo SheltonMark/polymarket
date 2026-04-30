@@ -716,6 +716,19 @@ export async function initDb() {
     await db.exec(`ALTER TABLE market_board_config ADD COLUMN last_batch_day TEXT NOT NULL DEFAULT ''`);
   }
 
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS app_meta (
+      k TEXT PRIMARY KEY,
+      v TEXT NOT NULL
+    )
+  `);
+  const mbPairAligned = await db.get(`SELECT 1 AS ok FROM app_meta WHERE k = ?`, ["market_board_pair_columns_aligned_v1"]);
+  if (!mbPairAligned) {
+    await db.exec(`DELETE FROM market_board_rows`);
+    await db.run(`UPDATE market_board_config SET last_batch_day = '' WHERE id = 1`);
+    await db.run(`INSERT INTO app_meta (k, v) VALUES (?, ?)`, ["market_board_pair_columns_aligned_v1", "1"]);
+  }
+
   const userColumns = await db.all("PRAGMA table_info(users)");
   const hasPrincipalAvailable = userColumns.some((column) => column.name === "principal_available");
   const hasProfitAvailable = userColumns.some((column) => column.name === "profit_available");

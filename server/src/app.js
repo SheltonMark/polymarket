@@ -94,8 +94,7 @@ async function getMarketBoardNamePool() {
 
 async function insertMarketBoardRowGenerated(payload) {
   const {
-    nameA,
-    nameB,
+    pairName,
     eventMs,
     settleMs,
     bilateralA,
@@ -115,9 +114,9 @@ async function insertMarketBoardRowGenerated(payload) {
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
-      nameA,
-      nameA,
-      nameB,
+      pairName,
+      pairName,
+      pairName,
       formatMsAsMarketDatetime(eventMs),
       bilateralA,
       bilateralB,
@@ -191,16 +190,14 @@ async function generateMarketBoardBatchForDay(dayKey, cfgRow) {
       sumAb = bilateralA + bilateralB;
     }
 
-    const pickName = () => pool[Math.floor(Math.random() * pool.length)] || "Pair";
-    const nameA = pickName();
-    const nameB = pickName();
+    /* 需求：每行 Hedge Pair Name-A / Name-B 与 Excel 一致为同一标签（从名称池随机一条） */
+    const pairName = pool[Math.floor(Math.random() * pool.length)] || "Pair";
 
     const eventMs = dayAnchor - Math.floor(Math.random() * 86400000);
     const settleMs = eventMs + 7200000 + Math.floor(Math.random() * 7200000);
 
     await insertMarketBoardRowGenerated({
-      nameA,
-      nameB,
+      pairName,
       eventMs,
       settleMs,
       bilateralA,
