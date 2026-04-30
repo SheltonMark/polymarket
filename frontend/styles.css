@@ -944,9 +944,11 @@ html[data-theme="dark"] .home-article-empty {
 
 .chart-container {
   position: relative;
+  width: 100%;
 }
 
 #pnlChart {
+  display: block;
   width: 100%;
   border-radius: var(--radius-md);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(238, 243, 255, 0.88));

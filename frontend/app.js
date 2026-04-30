@@ -611,7 +611,7 @@ function drawPnlChart() {
   const canvas = q("#pnlChart");
   if (!canvas) return;
   const parentWidth = canvas.parentElement.clientWidth;
-  const width = Math.max(320, Math.floor(parentWidth - 36));
+  const width = Math.max(320, Math.floor(parentWidth));
   const height = 280;
   const dpr = window.devicePixelRatio || 1;
 
