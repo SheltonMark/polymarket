@@ -1454,17 +1454,21 @@ function initSiteTheme() {
 }
 
 const MARK_BOARD_HEADERS = [
-  "Hedge Pair Name-A",
-  "Hedge Pair Name-B",
-  "Event Occurrence Time",
-  "Bilateral Value-A",
-  "Bilateral Value-B",
-  "Profit Margin",
-  "Market Depth",
-  "Trading Amount",
-  "Profit Amount",
-  "Profit Settlement Time",
+  "Pair A",
+  "Pair B",
+  "Event Time",
+  "Bilateral A",
+  "Bilateral B",
+  "Margin %",
+  "Depth",
+  "Trade Amt",
+  "Profit",
+  "Settled At",
 ];
+
+/** 与 MARK_BOARD_HEADERS 列数一致，百分比之和为 100 */
+const MARK_BOARD_COL_PCTS = [13, 13, 12, 8, 8, 7, 7, 12, 10, 10];
+
 
 let marketBoardPollTimer = null;
 const marketBoardHistoryState = {
@@ -1516,15 +1520,19 @@ function fmtMarketBoardNumber(value) {
   return n.toFixed(2);
 }
 
+function marketBoardColInnerHtml() {
+  return MARK_BOARD_COL_PCTS.map((p) => `<col style="width:${p}%" />`).join("");
+}
+
 function marketBoardColgroupHtml() {
-  return `<colgroup>${MARK_BOARD_HEADERS.map(() => "<col />").join("")}</colgroup>`;
+  return `<colgroup>${marketBoardColInnerHtml()}</colgroup>`;
 }
 
 function renderMarketBoardStaticHead() {
   const cg = q("#marketBoardHeadColgroup");
   const tr = q("#marketBoardHeadRow");
   if (!cg || !tr) return;
-  cg.innerHTML = MARK_BOARD_HEADERS.map(() => "<col />").join("");
+  cg.innerHTML = marketBoardColInnerHtml();
   tr.innerHTML = MARK_BOARD_HEADERS.map((h) => `<th>${h}</th>`).join("");
 }
 

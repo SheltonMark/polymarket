@@ -411,6 +411,151 @@ main {
   border: 1px solid rgba(64, 88, 160, 0.14);
 }
 
+html[data-theme="dark"] .btn.ghost {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+html[data-theme="dark"] .btn.ghost:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(160, 190, 255, 0.35);
+}
+
+/* Dark: 交易中心 / 个人中心 — 浅色硬编码表面 */
+html[data-theme="dark"] .stat-chip {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+html[data-theme="dark"] tbody tr:hover {
+  background: rgba(122, 163, 255, 0.08);
+}
+
+html[data-theme="dark"] .switch-btn {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-soft);
+}
+
+html[data-theme="dark"] .switch-btn.active {
+  color: #17285f;
+  background: rgba(122, 163, 255, 0.42);
+}
+
+html[data-theme="dark"] .bank-info {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+html[data-theme="dark"] code {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
+
+html[data-theme="dark"] input,
+html[data-theme="dark"] select {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
+
+html[data-theme="dark"] input:focus,
+html[data-theme="dark"] select:focus {
+  border-color: rgba(122, 163, 255, 0.45);
+  box-shadow: 0 0 0 3px rgba(122, 163, 255, 0.15);
+}
+
+html[data-theme="dark"] input[type="file"]::file-selector-button {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text);
+}
+
+html[data-theme="dark"] .custom-select-trigger {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: linear-gradient(180deg, rgba(34, 42, 68, 0.95), rgba(22, 28, 48, 0.92));
+  color: var(--text);
+}
+
+html[data-theme="dark"] .custom-select.open .custom-select-trigger,
+html[data-theme="dark"] .custom-select-trigger:hover {
+  border-color: rgba(122, 163, 255, 0.42);
+  box-shadow: 0 0 0 3px rgba(122, 163, 255, 0.12);
+}
+
+html[data-theme="dark"] .custom-select-menu {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(22, 28, 44, 0.96);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme="dark"] .custom-select-option:hover {
+  background: rgba(122, 163, 255, 0.14);
+}
+
+html[data-theme="dark"] .custom-select-option.active {
+  background: rgba(122, 163, 255, 0.22);
+  color: var(--text);
+}
+
+html[data-theme="dark"] .custom-select-arrow {
+  border-right-color: rgba(200, 212, 255, 0.75);
+  border-bottom-color: rgba(200, 212, 255, 0.75);
+}
+
+html[data-theme="dark"] .record-item {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+html[data-theme="dark"] .chip,
+html[data-theme="dark"] .tag {
+  color: #b8ceff;
+  background: rgba(122, 163, 255, 0.16);
+}
+
+html[data-theme="dark"] .text-link {
+  color: #9cb6ff;
+}
+
+html[data-theme="dark"] .status.running {
+  color: #fcd34d;
+  background: rgba(251, 191, 36, 0.16);
+}
+
+html[data-theme="dark"] .status.done {
+  color: #93c5fd;
+  background: rgba(96, 165, 250, 0.14);
+}
+
+html[data-theme="dark"] .meta-pill {
+  color: #b8ceff;
+  background: rgba(122, 163, 255, 0.14);
+}
+
+html[data-theme="dark"] .order-item {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+html[data-theme="dark"] .view-all-btn {
+  border-color: rgba(122, 163, 255, 0.35);
+  background: linear-gradient(180deg, rgba(40, 52, 88, 0.9), rgba(28, 36, 62, 0.88));
+  color: #d6e3ff;
+}
+
+html[data-theme="dark"] .agreement-content {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
+
+html[data-theme="dark"] th,
+html[data-theme="dark"] td {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
 .btn.sm {
   padding: 7px 11px;
   font-size: 0.8rem;
@@ -1519,13 +1664,13 @@ input[type="file"]::file-selector-button {
 }
 
 html[data-theme="dark"] #authBtn.profile-icon-btn::before {
-  border-color: rgba(160, 190, 255, 0.85);
-  background: rgba(40, 50, 80, 0.9);
+  border-color: rgba(200, 218, 255, 0.95);
+  background: rgba(130, 165, 255, 0.28);
 }
 
 html[data-theme="dark"] #authBtn.profile-icon-btn::after {
-  border-color: rgba(160, 190, 255, 0.85);
-  background: rgba(40, 50, 80, 0.85);
+  border-color: rgba(200, 218, 255, 0.95);
+  background: rgba(110, 150, 245, 0.22);
 }
 
 /* --- Market board (trading center) --- */
@@ -1537,10 +1682,9 @@ html[data-theme="dark"] #authBtn.profile-icon-btn::after {
   --mb-head-bg: rgba(245, 248, 255, 0.96);
   --mb-row-alt: rgba(74, 120, 255, 0.04);
   --mb-accent: #4a78ff;
-  --mb-table-min-width: 1220px;
   margin-top: 14px;
   margin-bottom: 8px;
-  padding: 18px 20px 16px;
+  padding: 16px 14px 14px;
   border-radius: var(--radius-xl);
   border: 1px solid var(--mb-stroke);
   background: var(--mb-bg);
@@ -1622,24 +1766,19 @@ html[data-theme="dark"] .market-board-card {
 .market-board-data-shell {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   margin-top: 2px;
-  max-width: 100%;
-  overflow-x: auto;
-  overflow-y: visible;
-  -webkit-overflow-scrolling: touch;
 }
 
 .market-board-head-panel {
   border-radius: var(--radius-lg);
   border: 1px solid var(--mb-stroke);
   background: var(--mb-head-bg);
-  overflow-x: visible;
-  overflow-y: visible;
+  overflow: hidden;
 }
 
 .market-board-head-table {
-  width: max(100%, var(--mb-table-min-width));
+  width: 100%;
   table-layout: fixed;
   border-collapse: collapse;
 }
@@ -1648,8 +1787,7 @@ html[data-theme="dark"] .market-board-card {
   border-radius: var(--radius-lg);
   border: 1px solid var(--mb-stroke);
   background: var(--mb-head-bg);
-  overflow-x: visible;
-  overflow-y: hidden;
+  overflow: hidden;
   min-height: 200px;
   max-height: 300px;
 }
@@ -1678,7 +1816,7 @@ html[data-theme="dark"] .market-board-card {
 }
 
 .market-board-body-table {
-  width: max(100%, var(--mb-table-min-width));
+  width: 100%;
   table-layout: fixed;
   border-collapse: collapse;
 }
@@ -1693,17 +1831,19 @@ html[data-theme="dark"] .market-board-card {
 }
 
 .market-board-table {
+  width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
-  font-size: 0.78rem;
+  font-size: 0.65rem;
   color: var(--mb-text);
 }
 
 .market-board-table thead th {
   text-align: left;
-  padding: 10px 12px;
+  padding: 7px 5px;
   font-weight: 700;
-  font-size: 0.68rem;
-  letter-spacing: 0.04em;
+  font-size: 0.58rem;
+  letter-spacing: 0.02em;
   text-transform: none;
   white-space: nowrap;
   background: var(--mb-head-bg);
@@ -1716,9 +1856,11 @@ html[data-theme="dark"] .market-board-card {
 }
 
 .market-board-table tbody td {
-  padding: 9px 12px;
+  padding: 6px 5px;
   border-bottom: 1px solid var(--mb-stroke);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .market-board-table tbody tr:nth-child(even) td {
