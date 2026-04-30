@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -35,6 +35,10 @@
       </nav>
 
       <div class="topbar-actions">
+        <div class="site-theme-toggle" role="group" aria-label="页面深浅色">
+          <button type="button" class="site-theme-btn active" id="siteThemeLight" data-theme="light">浅色</button>
+          <button type="button" class="site-theme-btn" id="siteThemeDark" data-theme="dark">深色</button>
+        </div>
         <button class="btn ghost" id="authBtn">注册 / 登录</button>
         <button class="btn sm top-logout-btn" id="topLogoutBtn" type="button" style="display:none;">退出</button>
       </div>
@@ -95,30 +99,34 @@
           </article>
         </div>
 
-        <article class="market-board-card" id="marketBoardCard" data-surface="light" aria-labelledby="marketBoardTitle">
+        <article class="market-board-card" id="marketBoardCard" aria-labelledby="marketBoardTitle">
           <div class="market-board-toolbar">
             <div class="market-board-intro">
               <div class="market-board-kicker">Multidimensional hedge · Live tape</div>
-              <h3 id="marketBoardTitle">大盘对冲撮合流</h3>
+              <h3 id="marketBoardTitle">大盘交易</h3>
             </div>
             <div class="market-board-controls">
               <div class="market-board-live" id="marketBoardLiveBadge" title="Live">
                 <span class="market-board-live-dot" aria-hidden="true"></span>
                 <span>LIVE</span>
               </div>
-              <div class="market-board-theme-toggle" role="group" aria-label="展示风格">
-                <button type="button" class="mb-theme-btn active" id="marketBoardThemeLight" data-theme="light">浅色</button>
-                <button type="button" class="mb-theme-btn" id="marketBoardThemeDark" data-theme="dark">深色</button>
-              </div>
               <button type="button" class="btn ghost sm" id="marketBoardHistoryBtn">历史记录</button>
             </div>
           </div>
           <div class="market-board-viewport" id="marketBoardViewport">
-            <div class="market-board-fade market-board-fade--top" aria-hidden="true"></div>
-            <div class="market-board-marquee" id="marketBoardMarquee">
-              <div class="market-board-track" id="marketBoardTrack"></div>
+            <div class="market-board-split">
+              <div class="market-board-fixed-head">
+                <table class="market-board-table market-board-head-table" lang="en">
+                  <colgroup id="marketBoardHeadColgroup"></colgroup>
+                  <thead><tr id="marketBoardHeadRow"></tr></thead>
+                </table>
+              </div>
+              <div class="market-board-body-marquee" id="marketBoardMarquee">
+                <div class="market-board-fade market-board-fade--edge market-board-fade--top" aria-hidden="true"></div>
+                <div class="market-board-track" id="marketBoardTrack"></div>
+                <div class="market-board-fade market-board-fade--edge market-board-fade--bottom" aria-hidden="true"></div>
+              </div>
             </div>
-            <div class="market-board-fade market-board-fade--bottom" aria-hidden="true"></div>
           </div>
         </article>
 
@@ -439,7 +447,8 @@
         <table class="market-board-history-table">
           <thead>
             <tr>
-              <th>Instrument</th>
+              <th>Hedge Pair Name-A</th>
+              <th>Hedge Pair Name-B</th>
               <th>Event Time</th>
               <th>Valuation A</th>
               <th>Valuation B</th>

@@ -633,6 +633,7 @@ function drawPnlChart() {
   const padY = 28;
   const drawW = width - padX * 2;
   const drawH = height - padY * 2;
+  const isDark = document.documentElement.dataset.theme === "dark";
 
   const toX = (index) => padX + (index / (data.length - 1 || 1)) * drawW;
   const toY = (value) => {
@@ -641,7 +642,7 @@ function drawPnlChart() {
   };
 
   const gridLines = 4;
-  ctx.strokeStyle = "rgba(76, 117, 255, 0.10)";
+  ctx.strokeStyle = isDark ? "rgba(255, 255, 255, 0.09)" : "rgba(76, 117, 255, 0.10)";
   ctx.lineWidth = 1;
   for (let i = 0; i <= gridLines; i++) {
     const gy = padY + (i / gridLines) * drawH;
@@ -709,7 +710,7 @@ function drawPnlChart() {
   ctx.fill();
   ctx.beginPath();
   ctx.arc(lastPt.x, lastPt.y, 1.8, 0, Math.PI * 2);
-  ctx.fillStyle = "#fff";
+  ctx.fillStyle = isDark ? "#1a2238" : "#fff";
   ctx.fill();
 
   chartState = { data, points, width, height, padX, padY };
@@ -1419,9 +1420,29 @@ function initSettleControls() {
   setInterval(() => settleDueOrders(), 15000);
 }
 
-const MARKET_BOARD_THEME_KEY = "lockpro_market_board_theme";
+const SITE_THEME_KEY = "lockpro_site_theme";
+const SITE_THEME_LEGACY_KEY = "lockpro_market_board_theme";
+
+function applySiteTheme(theme) {
+  const t = theme === "dark" ? "dark" : "light";
+  document.documentElement.dataset.theme = t;
+  localStorage.setItem(SITE_THEME_KEY, t);
+  q("#siteThemeLight")?.classList.toggle("active", t === "light");
+  q("#siteThemeDark")?.classList.toggle("active", t === "dark");
+  drawPnlChart();
+}
+
+function initSiteTheme() {
+  const saved =
+    localStorage.getItem(SITE_THEME_KEY) || localStorage.getItem(SITE_THEME_LEGACY_KEY) || "light";
+  applySiteTheme(saved === "dark" ? "dark" : "light");
+  q("#siteThemeLight")?.addEventListener("click", () => applySiteTheme("light"));
+  q("#siteThemeDark")?.addEventListener("click", () => applySiteTheme("dark"));
+}
+
 const MARK_BOARD_HEADERS = [
-  "Instrument",
+  "Hedge Pair Name-A",
+  "Hedge Pair Name-B",
   "Event Time",
   "Valuation A",
   "Valuation B",
@@ -1482,11 +1503,30 @@ function fmtMarketBoardNumber(value) {
   return n.toFixed(2);
 }
 
+function marketBoardColgroupHtml() {
+  return `<colgroup>${MARK_BOARD_HEADERS.map(() => "<col />").join("")}</colgroup>`;
+}
+
+function renderMarketBoardStaticHead() {
+  const cg = q("#marketBoardHeadColgroup");
+  const tr = q("#marketBoardHeadRow");
+  if (!cg || !tr) return;
+  cg.innerHTML = MARK_BOARD_HEADERS.map(() => "<col />").join("");
+  tr.innerHTML = MARK_BOARD_HEADERS.map((h) => `<th>${h}</th>`).join("");
+}
+
+function marketBoardBodyBlockHtml(rows) {
+  const body = rows.map((r) => marketBoardRowHtml(r)).join("");
+  return `<table class="market-board-body-table market-board-table" lang="en">${marketBoardColgroupHtml()}<tbody>${body}</tbody></table>`;
+}
+
 function marketBoardRowHtml(row) {
   const pl = Number(row.profitAmount);
   const plClass = Number.isFinite(pl) && pl < 0 ? "mb-num-neg" : "mb-num-pos";
+  const pair = escapeHtml(row.pairName);
   return `<tr>
-    <td>${escapeHtml(row.pairName)}</td>
+    <td>${pair}</td>
+    <td>${pair}</td>
     <td>${escapeHtml(row.eventOccurredAt)}</td>
     <td>${escapeHtml(fmtMarketBoardNumber(row.bilateralA))}</td>
     <td>${escapeHtml(fmtMarketBoardNumber(row.bilateralB))}</td>
@@ -1498,35 +1538,19 @@ function marketBoardRowHtml(row) {
   </tr>`;
 }
 
-function buildMarketBoardTableMarkup(rows) {
-  const th = MARK_BOARD_HEADERS.map((h) => `<th>${h}</th>`).join("");
-  const body = rows.map((r) => marketBoardRowHtml(r)).join("");
-  return `<table class="market-board-table" lang="en"><thead><tr>${th}</tr></thead><tbody>${body}</tbody></table>`;
-}
-
 async function refreshMarketBoardFeed() {
   const track = q("#marketBoardTrack");
   if (!track) return;
+  renderMarketBoardStaticHead();
   const payload = await apiRequest("/api/market-board/feed?limit=48");
   const rows = Array.isArray(payload.rows) ? payload.rows : [];
   if (!rows.length) {
-    track.innerHTML =
-      '<div class="market-board-empty" lang="en">No rows yet.</div>';
+    track.innerHTML = '<div class="market-board-empty" lang="en">No rows yet.</div>';
     return;
   }
-  const single = buildMarketBoardTableMarkup(rows);
+  const block = marketBoardBodyBlockHtml(rows);
   const dur = Math.min(110, Math.max(24, rows.length * 2.1));
-  track.innerHTML = `<div class="market-board-scroll-inner" style="animation-duration:${dur}s">${single}${single}</div>`;
-}
-
-function applyMarketBoardTheme(theme) {
-  const card = q("#marketBoardCard");
-  if (!card) return;
-  const t = theme === "dark" ? "dark" : "light";
-  card.dataset.surface = t;
-  q("#marketBoardThemeLight")?.classList.toggle("active", t === "light");
-  q("#marketBoardThemeDark")?.classList.toggle("active", t === "dark");
-  localStorage.setItem(MARKET_BOARD_THEME_KEY, t);
+  track.innerHTML = `<div class="market-board-scroll-inner" style="animation-duration:${dur}s">${block}${block}</div>`;
 }
 
 function openMarketBoardHistoryModal() {
@@ -1570,7 +1594,7 @@ async function loadMarketBoardHistory(reset) {
       tbody.insertAdjacentHTML("beforeend", rows.map((row) => marketBoardRowHtml(row)).join(""));
     } else if (reset && !tbody.children.length) {
       tbody.innerHTML =
-        '<tr><td colspan="9" class="market-board-history-empty">No records.</td></tr>';
+        '<tr><td colspan="10" class="market-board-history-empty">No records.</td></tr>';
     }
     meta.textContent = `Page ${data.page} of ${marketBoardHistoryState.totalPages} · ${data.total} rows`;
   } catch (err) {
@@ -1582,11 +1606,7 @@ async function loadMarketBoardHistory(reset) {
 }
 
 function initMarketBoard() {
-  const saved = localStorage.getItem(MARKET_BOARD_THEME_KEY);
-  applyMarketBoardTheme(saved === "dark" ? "dark" : "light");
-
-  q("#marketBoardThemeLight")?.addEventListener("click", () => applyMarketBoardTheme("light"));
-  q("#marketBoardThemeDark")?.addEventListener("click", () => applyMarketBoardTheme("dark"));
+  renderMarketBoardStaticHead();
 
   q("#marketBoardHistoryBtn")?.addEventListener("click", openMarketBoardHistoryModal);
   q("#closeMarketBoardHistory")?.addEventListener("click", closeMarketBoardHistoryModal);
@@ -1636,6 +1656,7 @@ async function bootstrapUserSession() {
 }
 
 async function init() {
+  initSiteTheme();
   initNav();
   initOrderModal();
   initProductsModal();
