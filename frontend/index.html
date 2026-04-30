@@ -95,6 +95,33 @@
           </article>
         </div>
 
+        <article class="market-board-card" id="marketBoardCard" data-surface="light" aria-labelledby="marketBoardTitle">
+          <div class="market-board-toolbar">
+            <div class="market-board-intro">
+              <div class="market-board-kicker">Multidimensional hedge · Live tape</div>
+              <h3 id="marketBoardTitle">大盘对冲撮合流</h3>
+            </div>
+            <div class="market-board-controls">
+              <div class="market-board-live" id="marketBoardLiveBadge" title="Live">
+                <span class="market-board-live-dot" aria-hidden="true"></span>
+                <span>LIVE</span>
+              </div>
+              <div class="market-board-theme-toggle" role="group" aria-label="展示风格">
+                <button type="button" class="mb-theme-btn active" id="marketBoardThemeLight" data-theme="light">浅色</button>
+                <button type="button" class="mb-theme-btn" id="marketBoardThemeDark" data-theme="dark">深色</button>
+              </div>
+              <button type="button" class="btn ghost sm" id="marketBoardHistoryBtn">历史记录</button>
+            </div>
+          </div>
+          <div class="market-board-viewport" id="marketBoardViewport">
+            <div class="market-board-fade market-board-fade--top" aria-hidden="true"></div>
+            <div class="market-board-marquee" id="marketBoardMarquee">
+              <div class="market-board-track" id="marketBoardTrack"></div>
+            </div>
+            <div class="market-board-fade market-board-fade--bottom" aria-hidden="true"></div>
+          </div>
+        </article>
+
         <div class="trade-grid" style="grid-template-columns:1fr;">
           <article class="card glass pnl-card">
             <div class="card-head">
@@ -398,6 +425,38 @@
         <button class="icon-btn" id="closeAgreementModal" aria-label="关闭">×</button>
       </div>
       <div class="agreement-content" id="agreementContent"></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="marketBoardHistoryBackdrop">
+    <div class="modal glass market-board-history-modal">
+      <div class="card-head">
+        <h3>Market Board · History</h3>
+        <button class="icon-btn" id="closeMarketBoardHistory" aria-label="Close">×</button>
+      </div>
+      <p class="hint" id="marketBoardHistoryMeta">Loading…</p>
+      <div class="table-wrap market-board-history-wrap">
+        <table class="market-board-history-table">
+          <thead>
+            <tr>
+              <th>Instrument</th>
+              <th>Event Time</th>
+              <th>Valuation A</th>
+              <th>Valuation B</th>
+              <th>Profit Margin</th>
+              <th>Market Depth</th>
+              <th>Trade Amount</th>
+              <th>P&amp;L</th>
+              <th>Settlement Time</th>
+            </tr>
+          </thead>
+          <tbody id="marketBoardHistoryBody"></tbody>
+        </table>
+      </div>
+      <div class="row-actions">
+        <button type="button" class="btn ghost" id="marketBoardHistoryClose2">Close</button>
+        <button type="button" class="btn primary sm" id="marketBoardHistoryMore">Load more</button>
+      </div>
     </div>
   </div>
 

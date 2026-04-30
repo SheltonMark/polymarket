@@ -647,6 +647,21 @@ export async function initDb() {
       text TEXT NOT NULL,
       created_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS market_board_rows (
+      id TEXT PRIMARY KEY,
+      pair_name TEXT NOT NULL,
+      event_occurred_at TEXT NOT NULL,
+      bilateral_a REAL NOT NULL,
+      bilateral_b REAL NOT NULL,
+      profit_margin_pct REAL NOT NULL,
+      market_depth REAL NOT NULL,
+      trading_amount REAL NOT NULL,
+      profit_amount REAL NOT NULL,
+      settled_at TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_market_board_created ON market_board_rows(created_at DESC);
   `);
 
   const userColumns = await db.all("PRAGMA table_info(users)");

@@ -54,6 +54,116 @@ function randomIntBetween(min, max) {
   return Math.floor(Math.random() * (right - left + 1)) + left;
 }
 
+function formatMsAsMarketDatetime(ms) {
+  const d = new Date(Number(ms));
+  const yy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mi = String(d.getMinutes()).padStart(2, "0");
+  const ss = String(d.getSeconds()).padStart(2, "0");
+  return `${yy}-${mm}-${dd} ${hh}:${mi}:${ss}`;
+}
+
+async function getMarketBoardProjectPool() {
+  const row = await db.get("SELECT project_pool FROM order_generation_defaults WHERE id = 1");
+  let pool = [];
+  try {
+    pool = JSON.parse(row?.project_pool || "[]");
+  } catch {
+    pool = [];
+  }
+  if (!Array.isArray(pool) || !pool.length) {
+    pool = ["Value Matrix", "Signal Harbor", "Nova Grid", "Apex Flow", "Orion Pulse"];
+  }
+  return pool.map(String).filter(Boolean);
+}
+
+async function insertRandomMarketBoardRow() {
+  const pool = await getMarketBoardProjectPool();
+  const pairName = pool[Math.floor(Math.random() * pool.length)] || "Hedge Pair";
+
+  let bilateralA = 1;
+  let bilateralB = 1;
+  let sum = 2;
+  while (sum <= 90 || sum >= 99) {
+    bilateralA = randomIntBetween(1, 99);
+    bilateralB = randomIntBetween(1, 99);
+    sum = bilateralA + bilateralB;
+  }
+
+  const profitMarginPct = round2(randomBetween(1, 10));
+  const marketDepth = round2(randomBetween(100, 50000));
+  const tradingAmount = round2(marketDepth * randomBetween(0.014, 0.2));
+  const profitAmount = round2((tradingAmount * profitMarginPct) / 100);
+
+  const nowMs = Date.now();
+  const eventMs = nowMs - Math.floor(Math.random() * 86400000);
+  const settleMs = eventMs + 7200000 + Math.floor(Math.random() * 7200000);
+
+  const id = newId("mb");
+  const createdAt = getNowString();
+
+  await db.run(
+    `INSERT INTO market_board_rows (
+      id, pair_name, event_occurred_at, bilateral_a, bilateral_b,
+      profit_margin_pct, market_depth, trading_amount, profit_amount,
+      settled_at, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      id,
+      pairName,
+      formatMsAsMarketDatetime(eventMs),
+      bilateralA,
+      bilateralB,
+      profitMarginPct,
+      marketDepth,
+      tradingAmount,
+      profitAmount,
+      formatMsAsMarketDatetime(settleMs),
+      createdAt,
+    ]
+  );
+}
+
+async function seedMarketBoardIfEmpty() {
+  const row = await db.get("SELECT COUNT(1) AS c FROM market_board_rows");
+  const n = Number(row?.c || 0);
+  if (n > 0) return;
+  const target = 28;
+  for (let i = 0; i < target; i += 1) {
+    await insertRandomMarketBoardRow();
+  }
+}
+
+function scheduleMarketBoardGeneration() {
+  const delay = 5000 + Math.floor(Math.random() * 115000);
+  setTimeout(async () => {
+    try {
+      await insertRandomMarketBoardRow();
+    } catch (err) {
+      console.error("[market-board]", err.message || err);
+    }
+    scheduleMarketBoardGeneration();
+  }, delay);
+}
+
+function mapMarketBoardRow(r) {
+  return {
+    id: r.id,
+    pairName: r.pair_name,
+    eventOccurredAt: r.event_occurred_at,
+    bilateralA: round2(r.bilateral_a),
+    bilateralB: round2(r.bilateral_b),
+    profitMarginPct: round2(r.profit_margin_pct),
+    marketDepth: round2(r.market_depth),
+    tradingAmount: round2(r.trading_amount),
+    profitAmount: round2(r.profit_amount),
+    settledAt: r.settled_at,
+    createdAt: r.created_at,
+  };
+}
+
 function safeString(value, fallback = "") {
   if (typeof value !== "string") return fallback;
   const text = value.trim();
@@ -375,6 +485,45 @@ app.get("/api/health", (_req, res) => {
 
 app.get("/api/site-config", async (_req, res) => {
   res.json(await getPublicSiteConfig());
+});
+
+app.get("/api/market-board/feed", async (req, res) => {
+  try {
+    const limit = Math.min(120, Math.max(12, Number(req.query.limit) || 42));
+    const rows = await db.all(
+      `SELECT * FROM market_board_rows ORDER BY datetime(created_at) DESC LIMIT ?`,
+      [limit]
+    );
+    res.json({ rows: rows.map(mapMarketBoardRow) });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "读取大盘数据失败" });
+  }
+});
+
+app.get("/api/market-board/history", async (req, res) => {
+  try {
+    const page = Math.max(1, parseInt(String(req.query.page || "1"), 10) || 1);
+    const pageSize = Math.min(80, Math.max(10, parseInt(String(req.query.pageSize || "24"), 10) || 24));
+    const offset = (page - 1) * pageSize;
+    const totalRow = await db.get(`SELECT COUNT(1) AS c FROM market_board_rows`);
+    const total = Number(totalRow?.c || 0);
+    const rows = await db.all(
+      `SELECT * FROM market_board_rows ORDER BY datetime(created_at) DESC LIMIT ? OFFSET ?`,
+      [pageSize, offset]
+    );
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    res.json({
+      page,
+      pageSize,
+      total,
+      totalPages,
+      rows: rows.map(mapMarketBoardRow),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "读取历史失败" });
+  }
 });
 
 app.post("/api/auth/register", async (req, res) => {
@@ -1482,4 +1631,9 @@ app.use((err, _req, res, _next) => {
 
 app.listen(PORT, () => {
   console.log(`LockPro server running on http://localhost:${PORT}`);
+  seedMarketBoardIfEmpty()
+    .catch((e) => console.error("[market-board] seed", e))
+    .finally(() => {
+      scheduleMarketBoardGeneration();
+    });
 });

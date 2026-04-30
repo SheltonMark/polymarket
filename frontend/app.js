@@ -78,6 +78,15 @@ function money(value) {
   return `$${Number(value || 0).toFixed(2)}`;
 }
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 function showToast(message, isError = false) {
   const toast = q("#toast");
   if (!toast) return;
@@ -174,6 +183,7 @@ function refreshAllSegmentIndicators() {
 function switchSection(id) {
   qq(".section").forEach((section) => section.classList.toggle("active", section.id === id));
   qq(".nav-btn[data-section]").forEach((btn) => btn.classList.toggle("active", btn.dataset.section === id));
+  syncMarketBoardForSection(id);
 }
 
 function initNav() {
@@ -1409,6 +1419,199 @@ function initSettleControls() {
   setInterval(() => settleDueOrders(), 15000);
 }
 
+const MARKET_BOARD_THEME_KEY = "lockpro_market_board_theme";
+const MARK_BOARD_HEADERS = [
+  "Instrument",
+  "Event Time",
+  "Valuation A",
+  "Valuation B",
+  "Profit Margin",
+  "Market Depth",
+  "Trade Amount",
+  "P&amp;L",
+  "Settlement Time",
+];
+
+let marketBoardPollTimer = null;
+const marketBoardHistoryState = {
+  page: 1,
+  totalPages: 1,
+  loading: false,
+};
+
+function mbRandomDelayMs() {
+  return 5000 + Math.floor(Math.random() * 115001);
+}
+
+function marketBoardPollEligible() {
+  return Boolean(q("#trade")?.classList.contains("active") && !document.hidden);
+}
+
+function stopMarketBoardPolling() {
+  clearTimeout(marketBoardPollTimer);
+  marketBoardPollTimer = null;
+}
+
+function scheduleMarketBoardPoll() {
+  clearTimeout(marketBoardPollTimer);
+  marketBoardPollTimer = setTimeout(async () => {
+    marketBoardPollTimer = null;
+    if (!marketBoardPollEligible()) return;
+    try {
+      await refreshMarketBoardFeed();
+    } catch {
+      /* ignore */
+    }
+    if (marketBoardPollEligible()) scheduleMarketBoardPoll();
+  }, mbRandomDelayMs());
+}
+
+function syncMarketBoardForSection(sectionId) {
+  if (sectionId === "trade") {
+    refreshMarketBoardFeed().catch(() => {});
+    scheduleMarketBoardPoll();
+  } else {
+    stopMarketBoardPolling();
+  }
+}
+
+function fmtMarketBoardNumber(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return "—";
+  if (Number.isInteger(n)) return String(n);
+  return n.toFixed(2);
+}
+
+function marketBoardRowHtml(row) {
+  const pl = Number(row.profitAmount);
+  const plClass = Number.isFinite(pl) && pl < 0 ? "mb-num-neg" : "mb-num-pos";
+  return `<tr>
+    <td>${escapeHtml(row.pairName)}</td>
+    <td>${escapeHtml(row.eventOccurredAt)}</td>
+    <td>${escapeHtml(fmtMarketBoardNumber(row.bilateralA))}</td>
+    <td>${escapeHtml(fmtMarketBoardNumber(row.bilateralB))}</td>
+    <td>${escapeHtml(`${fmtMarketBoardNumber(row.profitMarginPct)}%`)}</td>
+    <td>${escapeHtml(fmtMarketBoardNumber(row.marketDepth))}</td>
+    <td>${escapeHtml(money(row.tradingAmount))}</td>
+    <td class="${plClass}">${escapeHtml(money(row.profitAmount))}</td>
+    <td>${escapeHtml(row.settledAt)}</td>
+  </tr>`;
+}
+
+function buildMarketBoardTableMarkup(rows) {
+  const th = MARK_BOARD_HEADERS.map((h) => `<th>${h}</th>`).join("");
+  const body = rows.map((r) => marketBoardRowHtml(r)).join("");
+  return `<table class="market-board-table" lang="en"><thead><tr>${th}</tr></thead><tbody>${body}</tbody></table>`;
+}
+
+async function refreshMarketBoardFeed() {
+  const track = q("#marketBoardTrack");
+  if (!track) return;
+  const payload = await apiRequest("/api/market-board/feed?limit=48");
+  const rows = Array.isArray(payload.rows) ? payload.rows : [];
+  if (!rows.length) {
+    track.innerHTML =
+      '<div class="market-board-empty" lang="en">No rows yet.</div>';
+    return;
+  }
+  const single = buildMarketBoardTableMarkup(rows);
+  const dur = Math.min(110, Math.max(24, rows.length * 2.1));
+  track.innerHTML = `<div class="market-board-scroll-inner" style="animation-duration:${dur}s">${single}${single}</div>`;
+}
+
+function applyMarketBoardTheme(theme) {
+  const card = q("#marketBoardCard");
+  if (!card) return;
+  const t = theme === "dark" ? "dark" : "light";
+  card.dataset.surface = t;
+  q("#marketBoardThemeLight")?.classList.toggle("active", t === "light");
+  q("#marketBoardThemeDark")?.classList.toggle("active", t === "dark");
+  localStorage.setItem(MARKET_BOARD_THEME_KEY, t);
+}
+
+function openMarketBoardHistoryModal() {
+  q("#marketBoardHistoryBackdrop")?.classList.add("open");
+  loadMarketBoardHistory(true).catch(() => {});
+}
+
+function closeMarketBoardHistoryModal() {
+  q("#marketBoardHistoryBackdrop")?.classList.remove("open");
+}
+
+function updateMarketBoardHistoryMoreBtn() {
+  const btn = q("#marketBoardHistoryMore");
+  if (!btn) return;
+  const disabled =
+    marketBoardHistoryState.loading ||
+    marketBoardHistoryState.page >= marketBoardHistoryState.totalPages;
+  btn.disabled = disabled;
+}
+
+async function loadMarketBoardHistory(reset) {
+  const meta = q("#marketBoardHistoryMeta");
+  const tbody = q("#marketBoardHistoryBody");
+  if (!meta || !tbody) return;
+
+  if (reset) {
+    marketBoardHistoryState.page = 1;
+    tbody.innerHTML = "";
+  }
+
+  marketBoardHistoryState.loading = true;
+  updateMarketBoardHistoryMoreBtn();
+  if (reset) meta.textContent = "Loading…";
+
+  try {
+    const page = marketBoardHistoryState.page;
+    const data = await apiRequest(`/api/market-board/history?page=${page}&pageSize=24`);
+    marketBoardHistoryState.totalPages = Math.max(1, Number(data.totalPages) || 1);
+    const rows = Array.isArray(data.rows) ? data.rows : [];
+    if (rows.length) {
+      tbody.insertAdjacentHTML("beforeend", rows.map((row) => marketBoardRowHtml(row)).join(""));
+    } else if (reset && !tbody.children.length) {
+      tbody.innerHTML =
+        '<tr><td colspan="9" class="market-board-history-empty">No records.</td></tr>';
+    }
+    meta.textContent = `Page ${data.page} of ${marketBoardHistoryState.totalPages} · ${data.total} rows`;
+  } catch (err) {
+    meta.textContent = err.message || "Failed to load.";
+  } finally {
+    marketBoardHistoryState.loading = false;
+    updateMarketBoardHistoryMoreBtn();
+  }
+}
+
+function initMarketBoard() {
+  const saved = localStorage.getItem(MARKET_BOARD_THEME_KEY);
+  applyMarketBoardTheme(saved === "dark" ? "dark" : "light");
+
+  q("#marketBoardThemeLight")?.addEventListener("click", () => applyMarketBoardTheme("light"));
+  q("#marketBoardThemeDark")?.addEventListener("click", () => applyMarketBoardTheme("dark"));
+
+  q("#marketBoardHistoryBtn")?.addEventListener("click", openMarketBoardHistoryModal);
+  q("#closeMarketBoardHistory")?.addEventListener("click", closeMarketBoardHistoryModal);
+  q("#marketBoardHistoryClose2")?.addEventListener("click", closeMarketBoardHistoryModal);
+  q("#marketBoardHistoryBackdrop")?.addEventListener("click", (event) => {
+    if (event.target.id === "marketBoardHistoryBackdrop") closeMarketBoardHistoryModal();
+  });
+
+  q("#marketBoardHistoryMore")?.addEventListener("click", async () => {
+    if (marketBoardHistoryState.loading || marketBoardHistoryState.page >= marketBoardHistoryState.totalPages) return;
+    marketBoardHistoryState.page += 1;
+    await loadMarketBoardHistory(false);
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) stopMarketBoardPolling();
+    else if (q("#trade")?.classList.contains("active")) scheduleMarketBoardPoll();
+  });
+
+  if (q("#trade")?.classList.contains("active")) {
+    refreshMarketBoardFeed().catch(() => {});
+    scheduleMarketBoardPoll();
+  }
+}
+
 async function bootstrapUserSession() {
   if (!state.token) {
     buildChartSeriesFromOrders();
@@ -1443,6 +1646,7 @@ async function init() {
   initAuth();
   initSettleControls();
   initChartInteraction();
+  initMarketBoard();
 
   await loadSiteConfig();
   await loadProducts();

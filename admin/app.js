@@ -5,7 +5,10 @@ const SECTION_META = {
   overview: { title: "数据概览", desc: "查看用户、资金、订单与内容的核心数据。" },
   "home-manage": { title: "首页管理", desc: "配置首页标题与文章内容。" },
   "user-manage": { title: "用户管理", desc: "查看用户信息，调整本金、订单与账号状态。" },
-  "order-config": { title: "订单配置", desc: "配置批量生成订单的默认参数（冻结、收益、时间、项目名）。" },
+  "order-config": {
+    title: "订单配置",
+    desc: "配置批量生成订单的默认参数（冻结、收益、时间）。项目名池同时映射前台交易中心行情的 Instrument 名称。",
+  },
   "order-manage": { title: "订单管理", desc: "配置订单模板状态与归档。" },
   "deposit-manage": { title: "充值管理", desc: "审核用户充值申请，支持通过或驳回。" },
   "withdraw-manage": { title: "提现管理", desc: "审核用户提现申请，支持通过或驳回。" },
