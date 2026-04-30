@@ -1443,14 +1443,14 @@ function initSiteTheme() {
 const MARK_BOARD_HEADERS = [
   "Hedge Pair Name-A",
   "Hedge Pair Name-B",
-  "Event Time",
-  "Valuation A",
-  "Valuation B",
+  "Event Occurrence Time",
+  "Bilateral Value-A",
+  "Bilateral Value-B",
   "Profit Margin",
   "Market Depth",
-  "Trade Amount",
-  "P&amp;L",
-  "Settlement Time",
+  "Trading Amount",
+  "Profit Amount",
+  "Profit Settlement Time",
 ];
 
 let marketBoardPollTimer = null;
@@ -1523,10 +1523,12 @@ function marketBoardBodyBlockHtml(rows) {
 function marketBoardRowHtml(row) {
   const pl = Number(row.profitAmount);
   const plClass = Number.isFinite(pl) && pl < 0 ? "mb-num-neg" : "mb-num-pos";
-  const pair = escapeHtml(row.pairName);
+  const legacy = row.pairName || "";
+  const cellA = escapeHtml(row.hedgePairNameA || legacy);
+  const cellB = escapeHtml(row.hedgePairNameB || legacy);
   return `<tr>
-    <td>${pair}</td>
-    <td>${pair}</td>
+    <td>${cellA}</td>
+    <td>${cellB}</td>
     <td>${escapeHtml(row.eventOccurredAt)}</td>
     <td>${escapeHtml(fmtMarketBoardNumber(row.bilateralA))}</td>
     <td>${escapeHtml(fmtMarketBoardNumber(row.bilateralB))}</td>

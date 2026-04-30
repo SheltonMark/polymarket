@@ -52,6 +52,7 @@
         <button class="menu-btn" data-section="home-manage">首页管理</button>
         <button class="menu-btn" data-section="user-manage">用户管理</button>
         <button class="menu-btn" data-section="order-config">订单配置</button>
+        <button class="menu-btn" data-section="market-board-config">大盘配置</button>
         <!-- 订单管理菜单临时隐藏，保留代码，后续可随时放开
         <button class="menu-btn" data-section="order-manage">订单管理</button>
         -->
@@ -217,7 +218,7 @@
           <article class="card glass">
             <div class="card-head">
               <h3>自动订单默认配置</h3>
-              <span class="hint">批量生成订单时的默认参数，可在生成弹窗中逐次覆盖。项目名池同时决定前台交易中心行情表中 Instrument 列所用名称。</span>
+              <span class="hint">批量生成订单时的默认参数，可在生成弹窗中逐次覆盖。项目名池用于订单模板展示名称。</span>
             </div>
             <form id="orderGenDefaultsForm" class="form-block">
               <div class="field-row">
@@ -251,10 +252,30 @@
                 </div>
               </div>
               <div class="field">
-                <label for="ogdProjectPool">项目名池（每行一个，订单模板与前台交易中心 Instrument 共用）</label>
+                <label for="ogdProjectPool">项目名池（每行一个）</label>
                 <textarea id="ogdProjectPool" rows="6" placeholder="例如：&#10;BTC-USDT Perp&#10;ETH Basis Spread"></textarea>
               </div>
               <button class="btn primary" type="submit">保存默认配置</button>
+            </form>
+          </article>
+        </section>
+
+        <section class="section" id="market-board-config">
+          <article class="card glass">
+            <div class="card-head">
+              <h3>前台大盘 · Hedge Pair 名称池</h3>
+              <span class="hint">与 Excel 表头「Hedge Pair Name-A / Hedge Pair Name-B」对应；服务端随机分别从 A 池、B 池各取一条写入行情。每行一条名称。</span>
+            </div>
+            <form id="marketBoardConfigForm" class="form-block">
+              <div class="field">
+                <label for="mbPoolA">Hedge Pair Name-A 名称池</label>
+                <textarea id="mbPoolA" rows="8" placeholder="每行一个名称"></textarea>
+              </div>
+              <div class="field">
+                <label for="mbPoolB">Hedge Pair Name-B 名称池</label>
+                <textarea id="mbPoolB" rows="8" placeholder="每行一个名称"></textarea>
+              </div>
+              <button class="btn primary" type="submit">保存大盘配置</button>
             </form>
           </article>
         </section>

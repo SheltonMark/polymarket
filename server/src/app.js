@@ -65,23 +65,33 @@ function formatMsAsMarketDatetime(ms) {
   return `${yy}-${mm}-${dd} ${hh}:${mi}:${ss}`;
 }
 
-async function getMarketBoardProjectPool() {
-  const row = await db.get("SELECT project_pool FROM order_generation_defaults WHERE id = 1");
-  let pool = [];
+async function getMarketBoardPoolsFromDb() {
+  const row = await db.get("SELECT hedge_pair_pool_a, hedge_pair_pool_b FROM market_board_config WHERE id = 1");
+  let poolA = [];
+  let poolB = [];
   try {
-    pool = JSON.parse(row?.project_pool || "[]");
+    poolA = JSON.parse(row?.hedge_pair_pool_a || "[]");
   } catch {
-    pool = [];
+    poolA = [];
   }
-  if (!Array.isArray(pool) || !pool.length) {
-    pool = ["Value Matrix", "Signal Harbor", "Nova Grid", "Apex Flow", "Orion Pulse"];
+  try {
+    poolB = JSON.parse(row?.hedge_pair_pool_b || "[]");
+  } catch {
+    poolB = [];
   }
-  return pool.map(String).filter(Boolean);
+  const fallback = ["Value Matrix", "Signal Harbor", "Nova Grid", "Apex Flow", "Orion Pulse"];
+  if (!Array.isArray(poolA) || poolA.length === 0) poolA = fallback;
+  if (!Array.isArray(poolB) || poolB.length === 0) poolB = fallback;
+  return {
+    poolA: poolA.map(String).filter(Boolean),
+    poolB: poolB.map(String).filter(Boolean),
+  };
 }
 
 async function insertRandomMarketBoardRow() {
-  const pool = await getMarketBoardProjectPool();
-  const pairName = pool[Math.floor(Math.random() * pool.length)] || "Hedge Pair";
+  const { poolA, poolB } = await getMarketBoardPoolsFromDb();
+  const nameA = poolA[Math.floor(Math.random() * poolA.length)] || "Hedge Pair A";
+  const nameB = poolB[Math.floor(Math.random() * poolB.length)] || "Hedge Pair B";
 
   let bilateralA = 1;
   let bilateralB = 1;
@@ -106,13 +116,15 @@ async function insertRandomMarketBoardRow() {
 
   await db.run(
     `INSERT INTO market_board_rows (
-      id, pair_name, event_occurred_at, bilateral_a, bilateral_b,
+      id, pair_name, hedge_pair_name_a, hedge_pair_name_b, event_occurred_at, bilateral_a, bilateral_b,
       profit_margin_pct, market_depth, trading_amount, profit_amount,
       settled_at, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
-      pairName,
+      nameA,
+      nameA,
+      nameB,
       formatMsAsMarketDatetime(eventMs),
       bilateralA,
       bilateralB,
@@ -122,7 +134,7 @@ async function insertRandomMarketBoardRow() {
       profitAmount,
       formatMsAsMarketDatetime(settleMs),
       createdAt,
-    ]
+    ],
   );
 }
 
@@ -149,9 +161,13 @@ function scheduleMarketBoardGeneration() {
 }
 
 function mapMarketBoardRow(r) {
+  const nameA = safeString(r.hedge_pair_name_a || r.pair_name);
+  const nameB = safeString(r.hedge_pair_name_b || r.pair_name);
   return {
     id: r.id,
-    pairName: r.pair_name,
+    hedgePairNameA: nameA,
+    hedgePairNameB: nameB,
+    pairName: nameA,
     eventOccurredAt: r.event_occurred_at,
     bilateralA: round2(r.bilateral_a),
     bilateralB: round2(r.bilateral_b),
@@ -1427,6 +1443,46 @@ app.put("/api/admin/order-generation-defaults", requireAdmin, async (req, res) =
   );
 
   await addActivity("自动订单默认配置已更新。");
+  res.json({ ok: true });
+});
+
+app.get("/api/admin/market-board-config", requireAdmin, async (_req, res) => {
+  const row = await db.get("SELECT * FROM market_board_config WHERE id = 1");
+  let poolA = [];
+  let poolB = [];
+  try {
+    poolA = JSON.parse(row?.hedge_pair_pool_a || "[]");
+  } catch {
+    poolA = [];
+  }
+  try {
+    poolB = JSON.parse(row?.hedge_pair_pool_b || "[]");
+  } catch {
+    poolB = [];
+  }
+  res.json({
+    hedgePairPoolA: Array.isArray(poolA) ? poolA : [],
+    hedgePairPoolB: Array.isArray(poolB) ? poolB : [],
+    updatedAt: row?.updated_at || "",
+  });
+});
+
+app.put("/api/admin/market-board-config", requireAdmin, async (req, res) => {
+  const poolA = Array.isArray(req.body.hedgePairPoolA)
+    ? req.body.hedgePairPoolA.map((item) => safeString(String(item))).filter(Boolean)
+    : [];
+  const poolB = Array.isArray(req.body.hedgePairPoolB)
+    ? req.body.hedgePairPoolB.map((item) => safeString(String(item))).filter(Boolean)
+    : [];
+  if (!poolA.length || !poolB.length) {
+    res.status(400).json({ message: "Hedge Pair Name-A 与 Name-B 名称池至少各保留一条" });
+    return;
+  }
+  await db.run(
+    `UPDATE market_board_config SET hedge_pair_pool_a = ?, hedge_pair_pool_b = ?, updated_at = ? WHERE id = 1`,
+    [JSON.stringify(poolA), JSON.stringify(poolB), getNowString()],
+  );
+  await addActivity("大盘行情 Hedge Pair 名称池已更新。");
   res.json({ ok: true });
 });
 

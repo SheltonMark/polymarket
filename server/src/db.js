@@ -82,6 +82,14 @@ const DEFAULT_PROJECT_POOL = [
   "Meridian Track K",
 ];
 
+const DEFAULT_MARKET_BOARD_POOL_JSON = JSON.stringify([
+  "Value Matrix",
+  "Signal Harbor",
+  "Nova Grid",
+  "Apex Flow",
+  "Orion Pulse",
+]);
+
 function getDefaultOrderGenerationRange() {
   const now = new Date();
   const y = now.getFullYear();
@@ -662,10 +670,26 @@ export async function initDb() {
       created_at TEXT NOT NULL
     );
     CREATE INDEX IF NOT EXISTS idx_market_board_created ON market_board_rows(created_at DESC);
+
+    CREATE TABLE IF NOT EXISTS market_board_config (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      hedge_pair_pool_a TEXT NOT NULL,
+      hedge_pair_pool_b TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
   `);
 
+  const mbCols = await db.all("PRAGMA table_info(market_board_rows)");
+  const hasMbHedgeA = mbCols.some((column) => column.name === "hedge_pair_name_a");
+  if (!hasMbHedgeA) {
+    await db.exec(`ALTER TABLE market_board_rows ADD COLUMN hedge_pair_name_a TEXT`);
+    await db.exec(`ALTER TABLE market_board_rows ADD COLUMN hedge_pair_name_b TEXT`);
+    await db.run(
+      `UPDATE market_board_rows SET hedge_pair_name_a = pair_name, hedge_pair_name_b = pair_name WHERE hedge_pair_name_a IS NULL OR hedge_pair_name_a = ''`
+    );
+  }
+
   const userColumns = await db.all("PRAGMA table_info(users)");
-  const hasPrincipalAvailable = userColumns.some((column) => column.name === "principal_available");
   const hasProfitAvailable = userColumns.some((column) => column.name === "profit_available");
 
   if (!hasPrincipalAvailable) {
@@ -720,9 +744,12 @@ export async function initDb() {
       JSON.stringify(defaultConfig.projectPool),
       getNowString(),
     ]
-  );  return db;
+  );
+
+  await db.run(
+    `INSERT OR IGNORE INTO market_board_config (id, hedge_pair_pool_a, hedge_pair_pool_b, updated_at) VALUES (1, ?, ?, ?)`,
+    [DEFAULT_MARKET_BOARD_POOL_JSON, DEFAULT_MARKET_BOARD_POOL_JSON, getNowString()],
+  );
+
+  return db;
 }
-
-
-
-
