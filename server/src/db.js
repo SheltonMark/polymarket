@@ -690,6 +690,7 @@ export async function initDb() {
   }
 
   const userColumns = await db.all("PRAGMA table_info(users)");
+  const hasPrincipalAvailable = userColumns.some((column) => column.name === "principal_available");
   const hasProfitAvailable = userColumns.some((column) => column.name === "profit_available");
 
   if (!hasPrincipalAvailable) {
